@@ -2,6 +2,7 @@ import string
 import textwrap
 
 from rubik.maths import Point, Matrix
+from rubik.Piece import Piece
 
 RIGHT = X_AXIS = Point(1, 0, 0)
 LEFT           = Point(-1, 0, 0)
@@ -10,10 +11,10 @@ DOWN           = Point(0, -1, 0)
 FRONT = Z_AXIS = Point(0, 0, 1)
 BACK           = Point(0, 0, -1)
 
+
 FACE = 'face'
 EDGE = 'edge'
 CORNER = 'corner'
-
 
 # 90 degree rotations in the XY plane. CW is clockwise, CC is counter-clockwise.
 ROT_XY_CW = Matrix(0, 1, 0,
@@ -54,57 +55,6 @@ def get_rot_from_face(face):
     return None
 
 
-class Piece:
-
-    def __init__(self, pos, colors):
-        """
-        :param pos: A tuple of integers (x, y, z) each ranging from -1 to 1
-        :param colors: A tuple of length three (x, y, z) where each component gives the color
-            of the side of the piece on that axis (if it exists), or None.
-        """
-        assert all(type(x) == int and x in (-1, 0, 1) for x in pos)
-        assert len(colors) == 3
-        self.pos = pos
-        self.colors = list(colors)
-        self._set_piece_type()
-
-    def __str__(self):
-        colors = "".join(c for c in self.colors if c is not None)
-        return f"({self.type}, {colors}, {self.pos})"
-
-    def _set_piece_type(self):
-        if self.colors.count(None) == 2:
-            self.type = FACE
-        elif self.colors.count(None) == 1:
-            self.type = EDGE
-        elif self.colors.count(None) == 0:
-            self.type = CORNER
-        else:
-            raise ValueError(f"Must have 1, 2, or 3 colors - given colors={self.colors}")
-
-    def rotate(self, matrix):
-        """Apply the given rotation matrix to this piece."""
-        before = self.pos
-        self.pos = matrix * self.pos
-
-        # we need to swap the positions of two things in self.colors so colors appear
-        # on the correct faces. rot gives us the axes to swap between.
-        rot = self.pos - before
-        if not any(rot):
-            return  # no change occurred
-        if rot.count(0) == 2:
-            rot += matrix * rot
-
-        assert rot.count(0) == 1, (
-            f"There is a bug in the Piece.rotate() method!"
-            f"\nbefore: {before}"
-            f"\nself.pos: {self.pos}"
-            f"\nrot: {rot}"
-        )
-
-        i, j = (i for i, x in enumerate(rot) if x != 0)
-        self.colors[i], self.colors[j] = self.colors[j], self.colors[i]
-
 
 class Cube:
     """Stores Pieces which are addressed through an x-y-z coordinate system:
@@ -128,16 +78,17 @@ class Cube:
     def __init__(self, cube_str):
         """
         cube_str looks like:
-                UUU                       0  1  2
-                UUU                       3  4  5
-                UUU                       6  7  8
-            LLL FFF RRR BBB      9 10 11 12 13 14 15 16 17 18 19 20
-            LLL FFF RRR BBB     21 22 23 24 25 26 27 28 29 30 31 32
-            LLL FFF RRR BBB     33 34 35 36 37 38 39 40 41 42 43 44
-                DDD                      45 46 47
-                DDD                      48 49 50
-                DDD                      51 52 53
+                UUU                        0  1  2
+                UUU                        3  4  5
+                UUU                        6  7  8
+            LLL FFF RRR BBB      9 10 11  12 13 14  15 16 17  18 19 20
+            LLL FFF RRR BBB     21 22 23  24 25 26  27 28 29  30 31 32
+            LLL FFF RRR BBB     33 34 35  36 37 38  39 40 41  42 43 44
+                DDD                       45 46 47
+                DDD                       48 49 50
+                DDD                       51 52 53
         Note that the back side is mirrored in the horizontal axis during unfolding.
+        So 18 (on the back) is directly under 12 (on the front)
         Each 'sticker' must be a single character.
         """
         if isinstance(cube_str, Cube):
@@ -286,7 +237,17 @@ class Cube:
         """
         :return: A set containing the colors of all stickers on the cube
         """
-        return set(c for piece in self.pieces for c in piece.colors if c is not None)
+        #for piece in self.pieces:
+        #    print ("colors: ", piece.getColors())
+
+        return set(c for piece in self.pieces for c in piece.getColors() if c is not None)
+
+
+    def stickers(self):
+        """
+        :return: A set containing all stickers on the cube
+        """
+        return set(s for piece in self.pieces for s in piece.stickers if s is not None)
 
     def left_color(self): return self[LEFT].colors[0]
     def right_color(self): return self[RIGHT].colors[0]
@@ -307,21 +268,43 @@ class Cube:
                    + left[3:6] + front[3:6] + right[3:6] + back[3:6]
                    + left[6:9] + front[6:9] + right[6:9] + back[6:9] + down)
 
+    def _sticker_list(self):
+        right = [p.stickers[0] for p in sorted(self._face(RIGHT), key=lambda p: (-p.pos.y, -p.pos.z))]
+        left  = [p.stickers[0] for p in sorted(self._face(LEFT),  key=lambda p: (-p.pos.y, p.pos.z))]
+        up    = [p.stickers[1] for p in sorted(self._face(UP),    key=lambda p: (p.pos.z, p.pos.x))]
+        down  = [p.stickers[1] for p in sorted(self._face(DOWN),  key=lambda p: (-p.pos.z, p.pos.x))]
+        front = [p.stickers[2] for p in sorted(self._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))]
+        back  = [p.stickers[2] for p in sorted(self._face(BACK),  key=lambda p: (-p.pos.y, -p.pos.x))]
+
+        return (up + left[0:3] + front[0:3] + right[0:3] + back[0:3]
+                   + left[3:6] + front[3:6] + right[3:6] + back[3:6]
+                   + left[6:9] + front[6:9] + right[6:9] + back[6:9] + down)
+
     def flat_str(self):
         return "".join(x for x in str(self) if x not in string.whitespace)
 
     def __str__(self):
-        template = ("    {}{}{}\n"
-                    "    {}{}{}\n"
-                    "    {}{}{}\n"
+        template = ("                {}{}{}\n"
+                    "                {}{}{}\n"
+                    "                {}{}{}\n"
                     "{}{}{} {}{}{} {}{}{} {}{}{}\n"
                     "{}{}{} {}{}{} {}{}{} {}{}{}\n"
                     "{}{}{} {}{}{} {}{}{} {}{}{}\n"
-                    "    {}{}{}\n"
-                    "    {}{}{}\n"
-                    "    {}{}{}")
+                    "                {}{}{}\n"
+                    "                {}{}{}\n"
+                    "                {}{}{}")
 
-        return "    " + template.format(*self._color_list()).strip()
+        template = ("        {}{}{}\n"
+                    "        {}{}{}\n"
+                    "        {}{}{}\n"
+                    "{}{}{} {}{}{} {}{}{} {}{}{}\n"
+                    "{}{}{} {}{}{} {}{}{} {}{}{}\n"
+                    "{}{}{} {}{}{} {}{}{} {}{}{}\n"
+                    "        {}{}{}\n"
+                    "        {}{}{}\n"
+                    "        {}{}{}")
+
+        return      "       " + template.format(*self._sticker_list()).strip()
 
 
 if __name__ == '__main__':

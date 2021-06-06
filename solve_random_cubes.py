@@ -28,10 +28,12 @@ def run():
     avg_time = 0.0
     while True:
         C = random_cube()
+        print("\n",C)
         solver = Solver(C)
-
+ 
         start = time.time()
         solver.solve()
+        print("\n", C)
         duration = time.time() - start
 
         if C.is_solved():
