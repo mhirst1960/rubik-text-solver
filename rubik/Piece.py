@@ -136,6 +136,16 @@ class Piece:
                 labels += v.label
 
         return labels
+
+    def getDestinations(self):
+        destinations = list()
+        for i, v in enumerate(self.stickers):
+            if (v == None):
+                destinations += [None]
+            else:
+                destinations += v.destination
+
+        return destinations
     
     def rotate(self, matrix):
         """Apply the given rotation matrix to this piece."""

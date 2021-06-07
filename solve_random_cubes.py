@@ -28,13 +28,16 @@ def run():
     avg_time = 0.0
     while True:
         C = random_cube()
-        print("\n",C)
+        print("\n\n",C)
+
         solver = Solver(C)
- 
+
         start = time.time()
         solver.solve()
-        print("\n", C)
         duration = time.time() - start
+
+        C.orientToFront()
+        print("\n\n", C)
 
         if C.is_solved():
             opt_moves = optimize_moves(solver.moves)

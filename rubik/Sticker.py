@@ -18,12 +18,12 @@ class Sticker:
     def setDefaultDestination(self, color):
             self.destination = self.destinations[color]
 
-    colorLookup = {'W':Color.F_White, 'B':Color.F_Blue, 'Y':Color.F_Yellow, 'G':Color.F_Green, 'O':Color.F_Orange, 'R':Color.F_Red}
+    colorLookup = {'W':Color.B_White, 'B':Color.B_Blue, 'Y':Color.B_Yellow, 'G':Color.B_Green, 'O':Color.B_Orange, 'R':Color.B_Red}
 
     def __str__(self):
         colorModify=self.colorLookup[self.color]
         #return f"{colorModify}{self.destination}{Color.F_Default}"
-        return f"{colorModify}{self.label}{Color.F_Default}"
+        return f"{colorModify}{Color.F_Black}{self.label} {Color.B_Default}{Color.F_Default}"
         #return f"{colorModify}({self.label}{self.group}){Color.F_Default}"
         #return f"{colorModify}({self.label}{self.destination}{self.group}){Color.F_Default}"
    

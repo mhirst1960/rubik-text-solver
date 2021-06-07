@@ -213,6 +213,16 @@ class Cube:
                 and all(c in p.colors for c in colors):
                 return p
 
+    # find a piece based on the intended solved orientation directions
+    def findPieceByDestination(self, *destinations):
+        if None in destinations:
+            return
+        for p in self.pieces:
+            if p.stickers.count(None) == 3 - len(destinations):
+                pieceDestinations = p.getDestinations()
+                if all(d in pieceDestinations for d in destinations):
+                    return p
+
     def get_piece(self, x, y, z):
         """
         :return: the Piece at the given Point
@@ -228,7 +238,7 @@ class Cube:
         return self.get_piece(*args)
 
     def __eq__(self, other):
-        return isinstance(other, Cube) and self._color_list() == other._color_list()
+        return isinstance(other, Cube) and self._sticker_list() == other._sticker_list()
 
     def __ne__(self, other):
         return not (self == other)
@@ -256,13 +266,61 @@ class Cube:
     def front_color(self): return self[FRONT].colors[2]
     def back_color(self): return self[BACK].colors[2]
 
+    def leftSticker(self): return self[LEFT].stickers[0]
+    def rightSticker(self): return self[RIGHT].stickers[0]
+    def upSticker(self): return self[UP].stickers[1]
+    def downSticker(self): return self[DOWN].stickers[1]
+    def frontSticker(self): return self[FRONT].stickers[2]
+    def backSticker(self): return self[BACK].stickers[2]
+
+    #orient entire cube so front destination is in front and up is up
+    def orientToFront(self):
+        face = self.findPieceByDestination('F')
+        move = ""
+
+        if face.pos[1] == 1:
+            move = "Xi"
+        elif face.pos[1] == -1:
+            move = "X"
+        elif face.pos[2] == 1:
+            move = ""
+        elif face.pos[2] == -1:
+            move = "X X"
+        elif face.pos[0] == -1:
+            move = "Yi"
+        elif face.pos[0] == 1:
+            move = "Y"
+        else:
+            print("ERROR: illegal color ", frontColor)
+            
+        self.sequence(move)
+        #print("front color should be ", color, ". It is: ", self.front_color())
+
+        up = self.findPieceByDestination('U')
+        move = ""
+
+        if up.pos[0] == 1:
+            move = "Zi"
+        elif up.pos[0] == -1:
+            move = "Z"
+        elif up.pos[2] == 1:
+            move = "X"
+        elif up.pos[2] == -1:
+            move = "Xi"
+        elif up.pos[1] == -1:
+            move = "Z Z"
+        elif up.pos[1] == 1:
+            move = ""
+
+        self.sequence(move)
+
     def _color_list(self):
         right = [p.colors[0] for p in sorted(self._face(RIGHT), key=lambda p: (-p.pos.y, -p.pos.z))]
         left  = [p.colors[0] for p in sorted(self._face(LEFT),  key=lambda p: (-p.pos.y, p.pos.z))]
         up    = [p.colors[1] for p in sorted(self._face(UP),    key=lambda p: (p.pos.z, p.pos.x))]
         down  = [p.colors[1] for p in sorted(self._face(DOWN),  key=lambda p: (-p.pos.z, p.pos.x))]
         front = [p.colors[2] for p in sorted(self._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))]
-        back  = [p.colors[2] for p in sorted(self._face(BACK),  key=lambda p: (-p.pos.y, -p.pos.x))]
+        back  = [p.colors[2] for p in sorted(self._face(BACK),  key=lambda p: (-p.pos.y, p.pos.x))]
 
         return (up + left[0:3] + front[0:3] + right[0:3] + back[0:3]
                    + left[3:6] + front[3:6] + right[3:6] + back[3:6]
@@ -274,7 +332,7 @@ class Cube:
         up    = [p.stickers[1] for p in sorted(self._face(UP),    key=lambda p: (p.pos.z, p.pos.x))]
         down  = [p.stickers[1] for p in sorted(self._face(DOWN),  key=lambda p: (-p.pos.z, p.pos.x))]
         front = [p.stickers[2] for p in sorted(self._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))]
-        back  = [p.stickers[2] for p in sorted(self._face(BACK),  key=lambda p: (-p.pos.y, -p.pos.x))]
+        back  = [p.stickers[2] for p in sorted(self._face(BACK),  key=lambda p: (-p.pos.y, p.pos.x))]
 
         return (up + left[0:3] + front[0:3] + right[0:3] + back[0:3]
                    + left[3:6] + front[3:6] + right[3:6] + back[3:6]
@@ -294,17 +352,19 @@ class Cube:
                     "                {}{}{}\n"
                     "                {}{}{}")
 
-        template = ("        {}{}{}\n"
-                    "        {}{}{}\n"
-                    "        {}{}{}\n"
+        template = ("       {}{}{}\n"
+                    "       {}{}{}\n"
+                    "       {}{}{}\n"
+                    "\n"
                     "{}{}{} {}{}{} {}{}{} {}{}{}\n"
                     "{}{}{} {}{}{} {}{}{} {}{}{}\n"
                     "{}{}{} {}{}{} {}{}{} {}{}{}\n"
-                    "        {}{}{}\n"
-                    "        {}{}{}\n"
-                    "        {}{}{}")
+                    "\n"
+                    "       {}{}{}\n"
+                    "       {}{}{}\n"
+                    "       {}{}{}")
 
-        return      "       " + template.format(*self._sticker_list()).strip()
+        return      "      " + template.format(*self._sticker_list()).strip()
 
 
 if __name__ == '__main__':
