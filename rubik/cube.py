@@ -134,15 +134,15 @@ class Cube:
         self._assert_data()
 
     def is_solved(self):
-        def check(colors):
-            assert len(colors) == 9
-            return all(c == colors[0] for c in colors)
-        return (check([piece.colors[2] for piece in self._face(FRONT)]) and
-                check([piece.colors[2] for piece in self._face(BACK)]) and
-                check([piece.colors[1] for piece in self._face(UP)]) and
-                check([piece.colors[1] for piece in self._face(DOWN)]) and
-                check([piece.colors[0] for piece in self._face(LEFT)]) and
-                check([piece.colors[0] for piece in self._face(RIGHT)]))
+        def check(destinations):
+            assert len(destinations) == 9
+            return all(c == destinations[0] for c in destinations)
+        return (check([piece.stickers[2].destination for piece in self._face(FRONT)]) and
+                check([piece.stickers[2].destination for piece in self._face(BACK)]) and
+                check([piece.stickers[1].destination for piece in self._face(UP)]) and
+                check([piece.stickers[1].destination for piece in self._face(DOWN)]) and
+                check([piece.stickers[0].destination for piece in self._face(LEFT)]) and
+                check([piece.stickers[0].destination for piece in self._face(RIGHT)]))
 
     def _face(self, axis):
         """
@@ -205,7 +205,7 @@ class Cube:
         for move in moves:
             move()
 
-    def find_piece(self, *colors):
+    def findPieceByColors(self, *colors):
         if None in colors:
             return
         for p in self.pieces:
@@ -214,7 +214,7 @@ class Cube:
                 return p
 
     # find a piece based on the intended solved orientation directions
-    def findPieceByDestination(self, *destinations):
+    def findPieceByDestinations(self, *destinations):
         if None in destinations:
             return
         for p in self.pieces:
@@ -272,10 +272,17 @@ class Cube:
     def downSticker(self): return self[DOWN].stickers[1]
     def frontSticker(self): return self[FRONT].stickers[2]
     def backSticker(self): return self[BACK].stickers[2]
+    
+    def leftDestination(self): return self.leftSticker().destination
+    def rightDestination(self): return self.rightSticker().destination
+    def upDestination(self): return self.upSticker().destination
+    def downDestination(self): return self.downSticker().destination
+    def frontDestination(self): return self.frontSticker().destination
+    def backDestination(self): return self.backSticker().destination
 
     #orient entire cube so front destination is in front and up is up
     def orientToFront(self):
-        face = self.findPieceByDestination('F')
+        face = self.findPieceByDestinations('F')
         move = ""
 
         if face.pos[1] == 1:
@@ -296,7 +303,7 @@ class Cube:
         self.sequence(move)
         #print("front color should be ", color, ". It is: ", self.front_color())
 
-        up = self.findPieceByDestination('U')
+        up = self.findPieceByDestinations('U')
         move = ""
 
         if up.pos[0] == 1:

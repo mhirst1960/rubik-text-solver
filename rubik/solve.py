@@ -3,21 +3,24 @@ import time
 from rubik import cube
 from rubik.maths import Point
 
-DEBUG = False
+DEBUG = True
 
 
 class Solver:
 
     def __init__(self, c):
+        
+        c.orientToFront()
+        
         self.cube = c
         self.colors = c.colors()
         self.stickers = c.stickers()
         self.moves = []
 
-        self.left_piece  = self.cube.find_piece(self.cube.left_color())
-        self.right_piece = self.cube.find_piece(self.cube.right_color())
-        self.up_piece    = self.cube.find_piece(self.cube.up_color())
-        self.down_piece  = self.cube.find_piece(self.cube.down_color())
+        self.left_piece  = self.cube.findPieceByDestinations('L')
+        self.right_piece = self.cube.findPieceByDestinations('R')
+        self.up_piece    = self.cube.findPieceByDestinations('U')
+        self.down_piece  = self.cube.findPieceByDestinations('D')
 
     def solve(self):
         if DEBUG: print(self.cube)
@@ -43,23 +46,24 @@ class Solver:
     def cross(self):
         if DEBUG: print("cross")
         # place the UP-LEFT piece
-        fl_piece = self.cube.find_piece(self.cube.front_color(), self.cube.left_color())
-        fr_piece = self.cube.find_piece(self.cube.front_color(), self.cube.right_color())
-        fu_piece = self.cube.find_piece(self.cube.front_color(), self.cube.up_color())
-        fd_piece = self.cube.find_piece(self.cube.front_color(), self.cube.down_color())
-
-        self._cross_left_or_right(fl_piece, self.left_piece, self.cube.left_color(), "L L", "E L Ei Li")
-        self._cross_left_or_right(fr_piece, self.right_piece, self.cube.right_color(), "R R", "Ei R E Ri")
+        
+        fl_piece = self.cube.findPieceByDestinations('F', 'L')
+        fr_piece = self.cube.findPieceByDestinations('F', 'R')
+        fu_piece = self.cube.findPieceByDestinations('F', 'U')
+        fd_piece = self.cube.findPieceByDestinations('F', 'D')
+        
+        self._cross_left_or_right(fl_piece, self.left_piece, self.cube.leftDestination(), "L L", "E L Ei Li")
+        self._cross_left_or_right(fr_piece, self.right_piece, self.cube.rightDestination(), "R R", "Ei R E Ri")
 
         self.move("Z")
-        self._cross_left_or_right(fd_piece, self.down_piece, self.cube.left_color(), "L L", "E L Ei Li")
-        self._cross_left_or_right(fu_piece, self.up_piece, self.cube.right_color(), "R R", "Ei R E Ri")
+        self._cross_left_or_right(fd_piece, self.down_piece, self.cube.leftDestination(), "L L", "E L Ei Li")
+        self._cross_left_or_right(fu_piece, self.up_piece, self.cube.rightDestination(), "R R", "Ei R E Ri")
         self.move("Zi")
 
-    def _cross_left_or_right(self, edge_piece, face_piece, face_color, move_1, move_2):
+    def _cross_left_or_right(self, edge_piece, face_piece, face_destination, move_1, move_2):
         # don't do anything if piece is in correct place
         if (edge_piece.pos == (face_piece.pos.x, face_piece.pos.y, 1)
-                and edge_piece.getColors()[2] == self.cube.front_color()):
+                and edge_piece.getDestinations()[2] == self.cube.frontDestination()):
             return
 
         # ensure piece is at z = -1
@@ -100,28 +104,29 @@ class Solver:
             self.move(undo_move)
 
         # the piece is on the correct face on plane z = -1, but has two orientations
-        if edge_piece.getColors()[0] == face_color:
+        if edge_piece.getDestinations()[0] == face_destination:
             self.move(move_1)
         else:
             self.move(move_2)
 
     def cross_corners(self):
         if DEBUG: print("cross_corners")
-        fld_piece = self.cube.find_piece(self.cube.front_color(), self.cube.left_color(), self.cube.down_color())
-        flu_piece = self.cube.find_piece(self.cube.front_color(), self.cube.left_color(), self.cube.up_color())
-        frd_piece = self.cube.find_piece(self.cube.front_color(), self.cube.right_color(), self.cube.down_color())
-        fru_piece = self.cube.find_piece(self.cube.front_color(), self.cube.right_color(), self.cube.up_color())
 
-        self.place_frd_corner(frd_piece, self.right_piece, self.down_piece, self.cube.front_color())
+        fld_piece = self.cube.findPieceByDestinations('F','L','D')
+        flu_piece = self.cube.findPieceByDestinations('F','L','U')
+        frd_piece = self.cube.findPieceByDestinations('F','R','D')
+        fru_piece = self.cube.findPieceByDestinations('F','R','U')
+        
+        self.place_frd_corner(frd_piece, self.right_piece, self.down_piece, self.cube.frontDestination())
         self.move("Z")
-        self.place_frd_corner(fru_piece, self.up_piece, self.right_piece, self.cube.front_color())
+        self.place_frd_corner(fru_piece, self.up_piece, self.right_piece, self.cube.frontDestination())
         self.move("Z")
-        self.place_frd_corner(flu_piece, self.left_piece, self.up_piece, self.cube.front_color())
+        self.place_frd_corner(flu_piece, self.left_piece, self.up_piece, self.cube.frontDestination())
         self.move("Z")
-        self.place_frd_corner(fld_piece, self.down_piece, self.left_piece, self.cube.front_color())
+        self.place_frd_corner(fld_piece, self.down_piece, self.left_piece, self.cube.frontDestination())
         self.move("Z")
 
-    def place_frd_corner(self, corner_piece, right_piece, down_piece, front_color):
+    def place_frd_corner(self, corner_piece, right_piece, down_piece, front_destination):
         # rotate to z = -1
         if corner_piece.pos.z == 1:
             pos = Point(corner_piece.pos)
@@ -156,29 +161,30 @@ class Solver:
             self.move("B")
 
         # there are three possible orientations for a corner
-        if corner_piece.getColors()[0] == front_color:
+        if corner_piece.getDestinations()[0] == front_destination:
             self.move("B D Bi Di")
-        elif corner_piece.getColors()[1] == front_color:
+        elif corner_piece.getDestinations()[1] == front_destination:
             self.move("Bi Ri B R")
         else:
             self.move("Ri B B R Bi Bi D Bi Di")
 
     def second_layer(self):
-        rd_piece = self.cube.find_piece(self.cube.right_color(), self.cube.down_color())
-        ru_piece = self.cube.find_piece(self.cube.right_color(), self.cube.up_color())
-        ld_piece = self.cube.find_piece(self.cube.left_color(), self.cube.down_color())
-        lu_piece = self.cube.find_piece(self.cube.left_color(), self.cube.up_color())
 
-        self.place_middle_layer_ld_edge(ld_piece, self.cube.left_color(), self.cube.down_color())
+        rd_piece = self.cube.findPieceByDestinations('R','D')
+        ru_piece = self.cube.findPieceByDestinations('R','U')
+        ld_piece = self.cube.findPieceByDestinations('L','D')
+        lu_piece = self.cube.findPieceByDestinations('L','U')
+                
+        self.place_middle_layer_ld_edge(ld_piece, self.cube.leftDestination(), self.cube.downDestination())
         self.move("Z")
-        self.place_middle_layer_ld_edge(rd_piece, self.cube.left_color(), self.cube.down_color())
+        self.place_middle_layer_ld_edge(rd_piece, self.cube.leftDestination(), self.cube.downDestination())
         self.move("Z")
-        self.place_middle_layer_ld_edge(ru_piece, self.cube.left_color(), self.cube.down_color())
+        self.place_middle_layer_ld_edge(ru_piece, self.cube.leftDestination(), self.cube.downDestination())
         self.move("Z")
-        self.place_middle_layer_ld_edge(lu_piece, self.cube.left_color(), self.cube.down_color())
+        self.place_middle_layer_ld_edge(lu_piece, self.cube.leftDestination(), self.cube.downDestination())
         self.move("Z")
 
-    def place_middle_layer_ld_edge(self, ld_piece, left_color, down_color):
+    def place_middle_layer_ld_edge(self, ld_piece, left_destination, down_destination):
         # move to z == -1
         if ld_piece.pos.z == 0:
             count = 0
@@ -192,12 +198,12 @@ class Solver:
 
         assert ld_piece.pos.z == -1
 
-        if ld_piece.getColors()[2] == left_color:
+        if ld_piece.getDestinations()[2] == left_destination:
             # left_color is on the back face, move piece to to down face
             while ld_piece.pos.y != -1:
                 self.move("B")
             self.move("B L Bi Li Bi Di B D")
-        elif ld_piece.getColors()[2] == down_color:
+        elif ld_piece.getDestinations()[2] == down_destination:
             # down_color is on the back face, move to left face
             while ld_piece.pos.x != -1:
                 self.move("B")
@@ -213,26 +219,26 @@ class Solver:
         #         -B-   -B-   ---   ---
         #         BBB   BB-   BBB   -B-
         #         -B-   ---   ---   ---
-        def state1():
-            return (self.cube[0, 1, 1].getColors()[2] == self.cube.front_color() and
-                    self.cube[-1, 0, 1].getColors()[2] == self.cube.front_color() and
-                    self.cube[0, -1, 1].getColors()[2] == self.cube.front_color() and
-                    self.cube[1, 0, 1].getColors()[2] == self.cube.front_color())
+        def state1():            
+            return (self.cube[0, 1, 1].getDestinations()[2] == 'B' and
+                    self.cube[-1, 0, 1].getDestinations()[2] == 'B' and
+                    self.cube[0, -1, 1].getDestinations()[2] == 'B' and
+                    self.cube[1, 0, 1].getDestinations()[2] == 'B')
 
         def state2():
-            return (self.cube[0, 1, 1].getColors()[2] == self.cube.front_color() and
-                    self.cube[-1, 0, 1].getColors()[2] == self.cube.front_color())
-
+            return (self.cube[0, 1, 1].getDestinations()[2] == 'B' and
+                    self.cube[-1, 0, 1].getDestinations()[2] == 'B')
+            
         def state3():
-            return (self.cube[-1, 0, 1].getColors()[2] == self.cube.front_color() and
-                    self.cube[1, 0, 1].getColors()[2] == self.cube.front_color())
-
+            return (self.cube[-1, 0, 1].getDestinations()[2] == 'B' and
+                    self.cube[1, 0, 1].getDestinations()[2] == 'B')
+            
         def state4():
-            return (self.cube[0, 1, 1].getColors()[2] != self.cube.front_color() and
-                    self.cube[-1, 0, 1].getColors()[2] != self.cube.front_color() and
-                    self.cube[0, -1, 1].getColors()[2] != self.cube.front_color() and
-                    self.cube[1, 0, 1].getColors()[2] != self.cube.front_color())
-
+            return (self.cube[0, 1, 1].getDestinations()[2] != 'B' and
+                    self.cube[-1, 0, 1].getDestinations()[2] != 'B' and
+                    self.cube[0, -1, 1].getDestinations()[2] != 'B' and
+                    self.cube[1, 0, 1].getDestinations()[2] != 'B')
+            
         count = 0
         while not state1():
             if state4() or state2():
@@ -256,11 +262,11 @@ class Solver:
         move_1 = "Li Fi L D F Di Li F L F F "  # swaps 1 and 2
         move_2 = "F Li Fi L D F Di Li F L F "  # swaps 1 and 3
 
-        c1 = self.cube.find_piece(self.cube.front_color(), self.cube.right_color(), self.cube.down_color())
-        c2 = self.cube.find_piece(self.cube.front_color(), self.cube.left_color(), self.cube.down_color())
-        c3 = self.cube.find_piece(self.cube.front_color(), self.cube.right_color(), self.cube.up_color())
-        c4 = self.cube.find_piece(self.cube.front_color(), self.cube.left_color(), self.cube.up_color())
-
+        c1 = self.cube.findPieceByDestinations('B','R','U')
+        c2 = self.cube.findPieceByDestinations('B','L','U')
+        c3 = self.cube.findPieceByDestinations('B','R','D')
+        c4 = self.cube.findPieceByDestinations('B','L','D')
+        
         # place corner 4
         if c4.pos == Point(1, -1, 1):
             self.move(move_1 + "Zi " + move_1 + " Z")
@@ -294,50 +300,50 @@ class Solver:
         #         BBB      BBB    BBB    BBB    BBB    BBB    BBB    BBB
         #         -B-B     BB-    -B-    -BB    BB-B  B-B-   B-B-B   BBB
         #         B          B    B B    B               B
-        def state1():
-            return (self.cube[ 1,  1, 1].getColors()[1] == self.cube.front_color() and
-                    self.cube[-1, -1, 1].getColors()[1] == self.cube.front_color() and
-                    self.cube[ 1, -1, 1].getColors()[0] == self.cube.front_color())
-
+        def state1():           
+            return (self.cube[ 1,  1, 1].getDestinations()[1] == 'B' and
+                    self.cube[-1, -1, 1].getDestinations()[1] == 'B' and
+                    self.cube[ 1, -1, 1].getDestinations()[0] == 'B')
+            
         def state2():
-            return (self.cube[-1,  1, 1].getColors()[1] == self.cube.front_color() and
-                    self.cube[ 1,  1, 1].getColors()[0] == self.cube.front_color() and
-                    self.cube[ 1, -1, 1].getColors()[1] == self.cube.front_color())
+            return (self.cube[-1,  1, 1].getDestinations()[1] == 'B' and
+                    self.cube[ 1,  1, 1].getDestinations()[0] == 'B' and
+                    self.cube[ 1, -1, 1].getDestinations()[1] == 'B')
 
         def state3():
-            return (self.cube[-1, -1, 1].getColors()[1] == self.cube.front_color() and
-                    self.cube[ 1, -1, 1].getColors()[1] == self.cube.front_color() and
-                    self.cube[-1,  1, 1].getColors()[2] == self.cube.front_color() and
-                    self.cube[ 1,  1, 1].getColors()[2] == self.cube.front_color())
-
+            return (self.cube[-1, -1, 1].getDestinations()[1] == 'B' and
+                    self.cube[ 1, -1, 1].getDestinations()[1] == 'B' and
+                    self.cube[-1,  1, 1].getDestinations()[2] == 'B' and
+                    self.cube[ 1,  1, 1].getDestinations()[2] == 'B')
+            
         def state4():
-            return (self.cube[-1,  1, 1].getColors()[1] == self.cube.front_color() and
-                    self.cube[-1, -1, 1].getColors()[1] == self.cube.front_color() and
-                    self.cube[ 1,  1, 1].getColors()[2] == self.cube.front_color() and
-                    self.cube[ 1, -1, 1].getColors()[2] == self.cube.front_color())
-
+            return (self.cube[-1,  1, 1].getDestinations()[1] == 'B' and
+                    self.cube[-1, -1, 1].getDestinations()[1] == 'B' and
+                    self.cube[ 1,  1, 1].getDestinations()[2] == 'B' and
+                    self.cube[ 1, -1, 1].getDestinations()[2] == 'B')
+            
         def state5():
-            return (self.cube[-1,  1, 1].getColors()[1] == self.cube.front_color() and
-                    self.cube[ 1, -1, 1].getColors()[0] == self.cube.front_color())
-
+            return (self.cube[-1,  1, 1].getDestinations()[1] == 'B' and
+                    self.cube[ 1, -1, 1].getDestinations()[0] == 'B')
+            
         def state6():
-            return (self.cube[ 1,  1, 1].getColors()[1] == self.cube.front_color() and
-                    self.cube[ 1, -1, 1].getColors()[1] == self.cube.front_color() and
-                    self.cube[-1, -1, 1].getColors()[0] == self.cube.front_color() and
-                    self.cube[-1,  1, 1].getColors()[0] == self.cube.front_color())
-
+            return (self.cube[ 1,  1, 1].getDestinations()[1] == 'B' and
+                    self.cube[ 1, -1, 1].getDestinations()[1] == 'B' and
+                    self.cube[-1, -1, 1].getDestinations()[0] == 'B' and
+                    self.cube[-1,  1, 1].getDestinations()[0] == 'B')
+            
         def state7():
-            return (self.cube[ 1,  1, 1].getColors()[0] == self.cube.front_color() and
-                    self.cube[ 1, -1, 1].getColors()[0] == self.cube.front_color() and
-                    self.cube[-1, -1, 1].getColors()[0] == self.cube.front_color() and
-                    self.cube[-1,  1, 1].getColors()[0] == self.cube.front_color())
-
+            return (self.cube[ 1,  1, 1].getDestinations()[0] == 'B' and
+                    self.cube[ 1, -1, 1].getDestinations()[0] == 'B' and
+                    self.cube[-1, -1, 1].getDestinations()[0] == 'B' and
+                    self.cube[-1,  1, 1].getDestinations()[0] == 'B')
+            
         def state8():
-            return (self.cube[ 1,  1, 1].getColors()[2] == self.cube.front_color() and
-                    self.cube[ 1, -1, 1].getColors()[2] == self.cube.front_color() and
-                    self.cube[-1, -1, 1].getColors()[2] == self.cube.front_color() and
-                    self.cube[-1,  1, 1].getColors()[2] == self.cube.front_color())
-
+            return (self.cube[ 1,  1, 1].getDestinations()[2] == 'B' and
+                    self.cube[ 1, -1, 1].getDestinations()[2] == 'B' and
+                    self.cube[-1, -1, 1].getDestinations()[2] == 'B' and
+                    self.cube[-1,  1, 1].getDestinations()[2] == 'B')
+            
         move_1 = "Ri Fi R Fi Ri F F R F F "
         move_2 = "R F Ri F R F F Ri F F "
 
@@ -353,7 +359,8 @@ class Solver:
                 self.move("F")
 
         # rotate corners into correct locations (cube is inverted, so swap up and down colors)
-        bru_corner = self.cube.find_piece(self.cube.front_color(), self.cube.right_color(), self.cube.up_color())
+        bru_corner = self.cube.findPieceByDestinations('B','R','D')
+        
         while bru_corner.pos != Point(1, 1, 1):
             self.move("F")
 
@@ -362,11 +369,11 @@ class Solver:
     def last_layer_edges(self):
         self.move("X X")
 
-        br_edge = self.cube.find_piece(self.cube.front_color(), self.cube.right_color())
-        bl_edge = self.cube.find_piece(self.cube.front_color(), self.cube.left_color())
-        bu_edge = self.cube.find_piece(self.cube.front_color(), self.cube.up_color())
-        bd_edge = self.cube.find_piece(self.cube.front_color(), self.cube.down_color())
-
+        br_edge = self.cube.findPieceByDestinations('B','R')
+        bl_edge = self.cube.findPieceByDestinations('B','L')
+        bu_edge = self.cube.findPieceByDestinations('B','U')
+        bd_edge = self.cube.findPieceByDestinations('B','D')
+        
         # States:
         #       1              2
         #      ---            ---
@@ -379,18 +386,17 @@ class Solver:
         #      ---            ---
         #      ---            ---
         #              (aB edge on any FRONT)
-        def state1():
-            return (bu_edge.getColors()[2] != self.cube.front_color() and
-                    bd_edge.getColors()[2] != self.cube.front_color() and
-                    bl_edge.getColors()[2] != self.cube.front_color() and
-                    br_edge.getColors()[2] != self.cube.front_color())
-
+        def state1():            
+            return (bu_edge.getDestinations()[2] != 'B' and
+                    bd_edge.getDestinations()[2] != 'B' and
+                    bl_edge.getDestinations()[2] != 'B' and
+                    br_edge.getDestinations()[2] != 'B')
+               
         def state2():
-            return (bu_edge.getColors()[2] == self.cube.front_color() or
-                    bd_edge.getColors()[2] == self.cube.front_color() or
-                    bl_edge.getColors()[2] == self.cube.front_color() or
-                    br_edge.getColors()[2] == self.cube.front_color())
-
+            return (bu_edge.getDestinations()[2] == 'B' or
+                    bd_edge.getDestinations()[2] == 'B' or
+                    bl_edge.getDestinations()[2] == 'B' or
+                    br_edge.getDestinations()[2] == 'B')
 
         cycle_move = "R R F D Ui R R Di U F R R"
         h_pattern_move = "Ri S Ri Ri S S Ri Fi Fi R Si Si Ri Ri Si R Fi Fi "
@@ -403,22 +409,22 @@ class Solver:
             self._handle_last_layer_state2(br_edge, bl_edge, bu_edge, bd_edge, cycle_move)
 
         def h_pattern1():
-            return (self.cube[-1,  0, 1].getColors()[0] != self.cube.left_color() and
-                    self.cube[ 1,  0, 1].getColors()[0] != self.cube.right_color() and
-                    self.cube[ 0, -1, 1].getColors()[1] == self.cube.down_color() and
-                    self.cube[ 0,  1, 1].getColors()[1] == self.cube.up_color())
-
+            return (self.cube[-1,  0, 1].getDestinations()[0] != self.cube.leftDestination() and
+                    self.cube[ 1,  0, 1].getDestinations()[0] != self.cube.rightDestination() and
+                    self.cube[ 0, -1, 1].getDestinations()[1] == self.cube.downDestination() and
+                    self.cube[ 0,  1, 1].getDestinations()[1] == self.cube.upDestination())
+            
         def h_pattern2():
-            return (self.cube[-1,  0, 1].getColors()[0] == self.cube.left_color() and
-                    self.cube[ 1,  0, 1].getColors()[0] == self.cube.right_color() and
-                    self.cube[ 0, -1, 1].getColors()[1] == self.cube.front_color() and
-                    self.cube[ 0,  1, 1].getColors()[1] == self.cube.front_color())
-
+            return (self.cube[-1,  0, 1].getDestinations()[0] == self.cube.leftDestination() and
+                    self.cube[ 1,  0, 1].getDestinations()[0] == self.cube.rightDestination() and
+                    self.cube[ 0, -1, 1].getDestinations()[1] == self.cube.frontDestination() and
+                    self.cube[ 0,  1, 1].getDestinations()[1] == self.cube.frontDestination())
+            
         def fish_pattern():
-            return (self.cube[cube.FRONT + cube.DOWN].getColors()[2] == self.cube.down_color() and
-                    self.cube[cube.FRONT + cube.RIGHT].getColors()[2] == self.cube.right_color() and
-                    self.cube[cube.FRONT + cube.DOWN].getColors()[1] == self.cube.front_color() and
-                    self.cube[cube.FRONT + cube.RIGHT].getColors()[0] == self.cube.front_color())
+            return (self.cube[cube.FRONT + cube.DOWN].getDestinations()[2] == self.cube.downDestination() and
+                    self.cube[cube.FRONT + cube.RIGHT].getDestinations()[2] == self.cube.rightDestination() and
+                    self.cube[cube.FRONT + cube.DOWN].getDestinations()[1] == self.cube.frontDestination() and
+                    self.cube[cube.FRONT + cube.RIGHT].getDestinations()[0] == self.cube.frontDestination())
 
         count = 0
         while not self.cube.is_solved():
@@ -446,7 +452,7 @@ class Solver:
     def _handle_last_layer_state1(self, br_edge, bl_edge, bu_edge, bd_edge, cycle_move, h_move):
         if DEBUG: print("_handle_last_layer_state1")
         def check_edge_lr():
-            return self.cube[cube.LEFT + cube.FRONT].getColors()[2] == self.cube.left_color()
+            return self.cube[cube.LEFT + cube.FRONT].getDestinations()[2] == self.cube.leftDestination()
 
         count = 0
         while not check_edge_lr():
@@ -465,16 +471,16 @@ class Solver:
         if DEBUG: print("_handle_last_layer_state2")
         def correct_edge():
             piece = self.cube[cube.LEFT + cube.FRONT]
-            if piece.getColors()[2] == self.cube.front_color() and piece.getColors()[0] == self.cube.left_color():
+            if piece.getDestinations()[2] == self.cube.frontDestination() and piece.getDestinations()[0] == self.cube.leftDestination():
                 return piece
             piece = self.cube[cube.RIGHT + cube.FRONT]
-            if piece.getColors()[2] == self.cube.front_color() and piece.getColors()[0] == self.cube.right_color():
+            if piece.getDestinations()[2] == self.cube.frontDestination() and piece.getDestinations()[0] == self.cube.rightDestination():
                 return piece
             piece = self.cube[cube.UP + cube.FRONT]
-            if piece.getColors()[2] == self.cube.front_color() and piece.getColors()[1] == self.cube.up_color():
+            if piece.getDestinations()[2] == self.cube.frontDestination() and piece.getDestinations()[1] == self.cube.upDestination():
                 return piece
             piece = self.cube[cube.DOWN + cube.FRONT]
-            if piece.getColors()[2] == self.cube.front_color() and piece.getColors()[1] == self.cube.down_color():
+            if piece.getDestinations()[2] == self.cube.frontDestination() and piece.getDestinations()[1] == self.cube.downDestination():
                 return piece
 
         count = 0
@@ -496,8 +502,8 @@ class Solver:
         while edge.pos != Point(-1, 0, 1):
             self.move("Z")
 
-        assert self.cube[cube.LEFT + cube.FRONT].getColors()[2] == self.cube.front_color() and \
-               self.cube[cube.LEFT + cube.FRONT].getColors()[0] == self.cube.left_color()
+        assert self.cube[cube.LEFT + cube.FRONT].getDestinations()[2] == self.cube.frontDestination() and \
+               self.cube[cube.LEFT + cube.FRONT].getDestinations()[0] == self.cube.leftDestination()
 
 
 if __name__ == '__main__':

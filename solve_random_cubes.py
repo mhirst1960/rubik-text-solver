@@ -29,15 +29,16 @@ def run():
     while True:
         C = random_cube()
         print("\n\n",C)
-
+        #C.orientToFront()
+        #print("\n\n", C)
+        
         solver = Solver(C)
 
         start = time.time()
         solver.solve()
         duration = time.time() - start
 
-        C.orientToFront()
-        print("\n\n", C)
+
 
         if C.is_solved():
             opt_moves = optimize_moves(solver.moves)
@@ -58,5 +59,5 @@ def run():
 
 
 if __name__ == '__main__':
-    solve.DEBUG = False
+    solve.DEBUG = True
     run()

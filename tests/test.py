@@ -540,7 +540,7 @@ class TestCube(unittest.TestCase):
                          str(self.debug_cube))
 
     def test_cube_find_face_piece(self):
-        piece = self.debug_cube.find_piece('p')
+        piece = self.debug_cube.findPieceByColors('p')
         self.assertEqual(cube.FACE, piece.type)
         self.assertEqual(cube.FRONT, piece.pos)
         self.assertEqual([None, None, 'p'], piece.colors)
@@ -550,8 +550,8 @@ class TestCube(unittest.TestCase):
             self.assertEqual(cube.EDGE, piece.type)
             self.assertEqual(cube.FRONT + cube.UP, piece.pos)
             self.assertEqual([None, '7', 'd'], piece.colors)
-        _check_piece(self.debug_cube.find_piece('d', '7'))
-        _check_piece(self.debug_cube.find_piece('7', 'd'))
+        _check_piece(self.debug_cube.findPieceByColors('d', '7'))
+        _check_piece(self.debug_cube.findPieceByColors('7', 'd'))
 
     def test_cube_find_corner_piece(self):
         def _check_piece(piece):
@@ -559,16 +559,16 @@ class TestCube(unittest.TestCase):
             self.assertEqual(cube.FRONT + cube.UP + cube.LEFT, piece.pos)
             self.assertEqual(['b', '6', 'c'], piece.colors)
         for colors in itertools.permutations(('b', '6', 'c')):
-            _check_piece(self.debug_cube.find_piece(*colors))
+            _check_piece(self.debug_cube.findPieceByColors(*colors))
 
     def test_cube_find_face_piece_negative(self):
-        self.assertIsNone(self.debug_cube.find_piece('7'))
+        self.assertIsNone(self.debug_cube.findPieceByColors('7'))
 
     def test_cube_find_edge_piece_negative(self):
-        self.assertIsNone(self.debug_cube.find_piece('o', 'q'))
+        self.assertIsNone(self.debug_cube.findPieceByColors('o', 'q'))
 
     def test_cube_find_corner_piece_negative(self):
-        self.assertIsNone(self.debug_cube.find_piece('c', '6', '9'))
+        self.assertIsNone(self.debug_cube.findPieceByColors('c', '6', '9'))
 
     def test_cube_is_solved(self):
         self.assertTrue(self.solved_cube.is_solved())
