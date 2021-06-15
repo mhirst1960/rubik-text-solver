@@ -27,7 +27,8 @@ class Piece:
 
         # Face directions for this piece in solved position
         if solvedFaces == None:
-            self.solvedFaces = list()
+            #self.solvedFaces = list()
+            self.solvedFaces = self.__getSolvedFacesFromPostions__()
         else:
             self.solvedFaces = list(solvedFaces)
             
@@ -54,7 +55,7 @@ class Piece:
                 groups = groups + [self.group]
 
 
-        stickers = zip(colors, self.labels, groups)
+        stickers = zip(colors, self.labels, groups, self.solvedFaces)
 
         # each sticker has a color, a label, and a group
         # each piece is initialized with an array of three stickers
@@ -63,9 +64,9 @@ class Piece:
         #stickers = list(stickers)
 
         
-        for c,l,g in stickers:
+        for c,l,g,f in stickers:
             if c is not None and l is not None:
-                sticker = Sticker(c, l, g)
+                sticker = Sticker(c, l, g, f) #TODO should include solved faces
             else:
                 sticker = None
 
@@ -76,6 +77,18 @@ class Piece:
 
         self._set_piece_type()
 
+    def __getSolvedFacesFromPostions__(self):
+        x = {-1:'L', 0:None, 1:'R'}
+        y = {-1:'D', 0:None, 1:'U'}
+        z = {-1:'B', 0:None, 1:'F'}
+
+        solvedFaces = list()
+        solvedFaces += [x[self.pos.x]]
+        solvedFaces += [y[self.pos.y]]
+        solvedFaces += [z[self.pos.z]]
+        
+        return solvedFaces
+        
 #    def __str__(self):
 #        colors = "".join(c for c in self.colors if c is not None)
 #        return f"({self.type}, {colors}, {self.pos})"

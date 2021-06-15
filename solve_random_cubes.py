@@ -6,6 +6,7 @@ from rubik.solve import Solver
 from rubik.optimize import optimize_moves
 
 SOLVED_CUBE_STR = "OOOOOOOOOYYYWWWGGGBBBYYYWWWGGGBBBYYYWWWGGGBBBRRRRRRRRR"
+#SOLVED_CUBE_STR = "YGOYORYOWBBBRWOYGWOBGOYYWWWGGOGBYYBRWWRGYORBBGRBORRWRG"
 MOVES = ["L", "R", "U", "D", "F", "B", "M", "E", "S"]
 
 
@@ -26,9 +27,13 @@ def run():
     avg_opt_moves = 0.0
     avg_moves = 0.0
     avg_time = 0.0
+    count = 0
     while True:
+
         C = random_cube()
-        print("\n\n",C)
+        #print("\n\n",C)
+        C.orientToFront()
+
         #C.orientToFront()
         #print("\n\n", C)
         

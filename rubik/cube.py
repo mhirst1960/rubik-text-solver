@@ -75,7 +75,48 @@ class Cube:
         assert all(p.type == EDGE for p in self.edges)
         assert all(p.type == CORNER for p in self.corners)
 
-    def __init__(self, cube_str):
+    def __newPiece(self, pos, x, y, z):
+        # create a new piece
+        if x == None:
+            cx = None
+            lx = None
+            gx = None
+        else:
+            cx = self.color_str[x]
+            lx = self.labels_str[x]
+            gx = self.groups_str[x]
+            
+        if y == None:
+            cy = None
+            ly = None
+            gy = None
+        else:
+            cy = self.color_str[y]
+            ly = self.labels_str[y]
+            gy = self.groups_str[y]
+            
+        if z == None:
+            cz = None
+            lz = None
+            gz = None
+        else:
+            cz = self.color_str[z]
+            lz = self.labels_str[z]
+            gz = self.groups_str[z]
+            
+        if gx != None:
+            g = gx
+        else:
+            if gy != None:
+                g = gy
+            else:
+                g = gz
+
+        p = Piece(pos, colors=(cx, cy, cz), labels=(lx, ly, lz), group=g)
+        return p
+
+        
+    def __init__(self, colors, labels=None, groups=None):
         """
         cube_str looks like:
                 UUU                        0  1  2
@@ -91,42 +132,62 @@ class Cube:
         So 18 (on the back) is directly under 12 (on the front)
         Each 'sticker' must be a single character.
         """
-        if isinstance(cube_str, Cube):
-            self._from_cube(cube_str)
+        if isinstance(colors, Cube):
+            self._from_cube(colors)
             return
 
-        cube_str = "".join(x for x in cube_str if x not in string.whitespace)
+        cube_str = "".join(x for x in colors if x not in string.whitespace)
+        
+        if labels == None:
+            labels_str = cube_str
+        else:
+            labels_str = "".join(x for x in labels if x not in string.whitespace)
+            
+        if groups == None:
+            groups_str = "0" * 54  # everything is group "0"
+        else:
+            groups_str = "".join(x for x in groups if x not in string.whitespace)
+
+
         assert len(cube_str) == 54
+        assert len(labels_str) == 54
+        assert len(groups_str) == 54
+        
+        self.color_str = cube_str
+        self.labels_str = labels_str
+        self.groups_str = groups_str
+        
         self.faces = (
-            Piece(pos=RIGHT, colors=(cube_str[28], None, None)),
-            Piece(pos=LEFT,  colors=(cube_str[22], None, None)),
-            Piece(pos=UP,    colors=(None, cube_str[4],  None)),
-            Piece(pos=DOWN,  colors=(None, cube_str[49], None)),
-            Piece(pos=FRONT, colors=(None, None, cube_str[25])),
-            Piece(pos=BACK,  colors=(None, None, cube_str[31])))
+            self.__newPiece(RIGHT, 28, None, None),
+            self.__newPiece(LEFT, 22, None, None),
+            self.__newPiece(UP,  None, 4, None),
+            self.__newPiece(DOWN, None, 49, None),
+            self.__newPiece(FRONT, None, None, 25),
+            self.__newPiece(BACK, None, None, 31),
+            )
         self.edges = (
-            Piece(pos=RIGHT + UP,    colors=(cube_str[16], cube_str[5], None)),
-            Piece(pos=RIGHT + DOWN,  colors=(cube_str[40], cube_str[50], None)),
-            Piece(pos=RIGHT + FRONT, colors=(cube_str[27], None, cube_str[26])),
-            Piece(pos=RIGHT + BACK,  colors=(cube_str[29], None, cube_str[30])),
-            Piece(pos=LEFT + UP,     colors=(cube_str[10], cube_str[3], None)),
-            Piece(pos=LEFT + DOWN,   colors=(cube_str[34], cube_str[48], None)),
-            Piece(pos=LEFT + FRONT,  colors=(cube_str[23], None, cube_str[24])),
-            Piece(pos=LEFT + BACK,   colors=(cube_str[21], None, cube_str[32])),
-            Piece(pos=UP + FRONT,    colors=(None, cube_str[7], cube_str[13])),
-            Piece(pos=UP + BACK,     colors=(None, cube_str[1], cube_str[19])),
-            Piece(pos=DOWN + FRONT,  colors=(None, cube_str[46], cube_str[37])),
-            Piece(pos=DOWN + BACK,   colors=(None, cube_str[52], cube_str[43])),
+            self.__newPiece(RIGHT + UP,    16, 5, None),
+            self.__newPiece(RIGHT + DOWN,  40, 50, None),
+            self.__newPiece(RIGHT + FRONT, 27, None, 26),
+            self.__newPiece(RIGHT + BACK,  29, None, 30),
+            self.__newPiece(LEFT + UP,     10, 3, None),
+            self.__newPiece(LEFT + DOWN,   34, 48, None),
+            self.__newPiece(LEFT + FRONT,  23, None, 24),
+            self.__newPiece(LEFT + BACK,   21, None, 32),
+            self.__newPiece(UP + FRONT,    None, 7, 13),
+            self.__newPiece(UP + BACK,     None, 1, 19),
+            self.__newPiece(DOWN + FRONT,  None, 46, 37),
+            self.__newPiece(DOWN + BACK,   None, 52, 43),
         )
         self.corners = (
-            Piece(pos=RIGHT + UP + FRONT,   colors=(cube_str[15], cube_str[8], cube_str[14])),
-            Piece(pos=RIGHT + UP + BACK,    colors=(cube_str[17], cube_str[2], cube_str[18])),
-            Piece(pos=RIGHT + DOWN + FRONT, colors=(cube_str[39], cube_str[47], cube_str[38])),
-            Piece(pos=RIGHT + DOWN + BACK,  colors=(cube_str[41], cube_str[53], cube_str[42])),
-            Piece(pos=LEFT + UP + FRONT,    colors=(cube_str[11], cube_str[6], cube_str[12])),
-            Piece(pos=LEFT + UP + BACK,     colors=(cube_str[9], cube_str[0], cube_str[20])),
-            Piece(pos=LEFT + DOWN + FRONT,  colors=(cube_str[35], cube_str[45], cube_str[36])),
-            Piece(pos=LEFT + DOWN + BACK,   colors=(cube_str[33], cube_str[51], cube_str[44])),
+            self.__newPiece(RIGHT + UP + FRONT,   15, 8, 14),
+            self.__newPiece(RIGHT + UP + BACK,    17, 2, 18),
+            self.__newPiece(RIGHT + DOWN + FRONT, 39, 47, 38),
+            self.__newPiece(RIGHT + DOWN + BACK,  41, 53, 42),
+            self.__newPiece(LEFT + UP + FRONT,    11, 6, 12),
+            self.__newPiece(LEFT + UP + BACK,     9, 0, 20),
+            self.__newPiece(LEFT + DOWN + FRONT,  35, 45, 36),
+            self.__newPiece(LEFT + DOWN + BACK,   33, 51, 44),
         )
 
         self.pieces = self.faces + self.edges + self.corners
@@ -223,6 +284,17 @@ class Cube:
                 if all(d in pieceDestinations for d in destinations):
                     return p
 
+    # find a piece based on the intended solved orientation directions
+    def findPieceByLabelAndGroup(self, label, group):
+        for p in self.pieces:
+            if p.group != group:
+                continue
+            labels = p.getLabels()
+            for l in labels:
+                if l == label:
+                    return p
+        return None
+                
     def get_piece(self, x, y, z):
         """
         :return: the Piece at the given Point
@@ -345,19 +417,41 @@ class Cube:
                    + left[3:6] + front[3:6] + right[3:6] + back[3:6]
                    + left[6:9] + front[6:9] + right[6:9] + back[6:9] + down)
 
+    def getLabels (self, face=None):
+        # get all stickers for the cube or a face
+        if face == None:
+            return self._label_list()
+        elif face == 'R':
+            return [p.getLabels()[0] for p in sorted(self._face(RIGHT), key=lambda p: (-p.pos.y, -p.pos.z))]
+        elif face == 'L':
+            return [p.getLabels()[0] for p in sorted(self._face(LEFT),  key=lambda p: (-p.pos.y, p.pos.z))]
+        elif face == 'U':
+            return [p.getLabels()[1] for p in sorted(self._face(UP),    key=lambda p: (p.pos.z, p.pos.x))]
+        elif face == 'D':
+            return [p.getLabels()[1] for p in sorted(self._face(DOWN),  key=lambda p: (-p.pos.z, p.pos.x))]
+        elif face == 'F':
+            return [p.getLabels()[2] for p in sorted(self._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))]
+        elif face == 'B':
+            return [p.getLabels()[2] for p in sorted(self._face(BACK),  key=lambda p: (-p.pos.y, p.pos.x))]
+        else:
+            return ''
+
+    def _label_list(self):
+        right = [p.getLabels()[0] for p in sorted(self._face(RIGHT), key=lambda p: (-p.pos.y, -p.pos.z))]
+        left  = [p.getLabels()[0] for p in sorted(self._face(LEFT),  key=lambda p: (-p.pos.y, p.pos.z))]
+        up    = [p.getLabels()[1] for p in sorted(self._face(UP),    key=lambda p: (p.pos.z, p.pos.x))]
+        down  = [p.getLabels()[1] for p in sorted(self._face(DOWN),  key=lambda p: (-p.pos.z, p.pos.x))]
+        front = [p.getLabels()[2] for p in sorted(self._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))]
+        back  = [p.getLabels()[2] for p in sorted(self._face(BACK),  key=lambda p: (-p.pos.y, p.pos.x))]
+
+        return (up + left[0:3] + front[0:3] + right[0:3] + back[0:3]
+                   + left[3:6] + front[3:6] + right[3:6] + back[3:6]
+                   + left[6:9] + front[6:9] + right[6:9] + back[6:9] + down)
+        
     def flat_str(self):
         return "".join(x for x in str(self) if x not in string.whitespace)
 
     def __str__(self):
-        template = ("                {}{}{}\n"
-                    "                {}{}{}\n"
-                    "                {}{}{}\n"
-                    "{}{}{} {}{}{} {}{}{} {}{}{}\n"
-                    "{}{}{} {}{}{} {}{}{} {}{}{}\n"
-                    "{}{}{} {}{}{} {}{}{} {}{}{}\n"
-                    "                {}{}{}\n"
-                    "                {}{}{}\n"
-                    "                {}{}{}")
 
         template = ("       {}{}{}\n"
                     "       {}{}{}\n"
@@ -371,7 +465,7 @@ class Cube:
                     "       {}{}{}\n"
                     "       {}{}{}")
 
-        return      "      " + template.format(*self._sticker_list()).strip()
+        return      ''.join(self._label_list()) + "\n       " + template.format(*self._sticker_list()).strip()
 
 
 if __name__ == '__main__':

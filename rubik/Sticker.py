@@ -11,7 +11,7 @@ class Sticker:
             self.setDefaultDestination(color) # direction based on color
         else:
             self.destination = destination # direction this points to when solved
-
+        
     # yellow on left, white on front, green on right, blue on back, orange on up, red on down side
     destinations= {'Y':'L', 'W':'F', 'G':'R', 'B':'B', 'O':'U', 'R':'D'}
 

@@ -8,7 +8,7 @@ DEBUG = True
 
 class Solver:
 
-    def __init__(self, c):
+    def __init__(self, c, groups=None):
         
         c.orientToFront()
         
@@ -25,26 +25,49 @@ class Solver:
     def solve(self):
         if DEBUG: print(self.cube)
         self.cross()
-        if DEBUG: print('Cross:\n', self.cube)
+        if DEBUG: print('---\nCross done\n', self.cube)
         self.cross_corners()
-        if DEBUG: print('Corners:\n', self.cube)
+        if DEBUG: print('---\nCorners done\n', self.cube)
         self.second_layer()
-        if DEBUG: print('Second layer:\n', self.cube)
+        if DEBUG: print('---\nSecond layer done\n', self.cube)
         self.back_face_edges()
-        if DEBUG: print('Last layer edges\n', self.cube)
+        if DEBUG: print('---\nLast layer edges done\n', self.cube)
         self.last_layer_corners_position()
-        if DEBUG: print('Last layer corners -- position\n', self.cube)
+        if DEBUG: print('---\nLast layer corners -- position done\n', self.cube)
         self.last_layer_corners_orientation()
-        if DEBUG: print('Last layer corners -- orientation\n', self.cube)
+        if DEBUG: print('---\nLast layer corners -- orientation done\n', self.cube)
         self.last_layer_edges()
-        if DEBUG: print('Solved\n', self.cube)
+        if DEBUG: print('---\nSolved. Cube looks like this:\n', self.cube)
 
+
+    def solveFrontString(self, frontString):
+        
+        centerPieceGroup = self.cube.get_piece(0,0,1).group
+        #self.rotateToFront(frontString[ord(centerPieceGroup)-ord('1')], centerPieceGroup)
+
+        #TODO now assign orientation to 8 other pieces in front layer based on frontstring
+        # for each piece destined for the front, simply rotate the whole cube so that piece is placed correctly
+        # and assign orientation
+        # later we can solve front based on orientations not colors.  Align orientations to match center pieces.
+
+        print (self.cube)
+        
+        frontPieces = list()
+        group = 1
+        groupch = chr(ord('0') + group)
+        for labelChar in frontString:
+            piece = self.cube.findPieceByLabelAndGroup(labelChar, groupch)
+            frontPieces += [piece]
+            group+=1
+            groupch = chr(ord('0') + group)
+        print ("found front pieces: ", frontPieces)
+            
     def move(self, move_str):
         self.moves.extend(move_str.split())
         self.cube.sequence(move_str)
 
     def cross(self):
-        if DEBUG: print("cross")
+        if DEBUG: print("cross..")
         # place the UP-LEFT piece
         
         fl_piece = self.cube.findPieceByDestinations('F', 'L')
@@ -347,7 +370,10 @@ class Solver:
         move_1 = "Ri Fi R Fi Ri F F R F F "
         move_2 = "R F Ri F R F F Ri F F "
 
+        count = 0
         while not state8():
+            count += 1
+            assert count < 10 # endless loop.  Possibly an impossible cube
             if state1(): self.move(move_1)
             elif state2(): self.move(move_2)
             elif state3(): self.move(move_2 + "F F " + move_1)
