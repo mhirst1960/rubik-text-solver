@@ -17,6 +17,19 @@ GGG WWW BBB YYY
     RRR
 """
 
+
+USA_COLORS = """
+    OOO
+    OOO
+    OOO
+GGW BRR YBB YYY
+GGG WWW BBB YYY
+GGB RRR GBB YYY
+    WRW
+    RRR
+    WWW
+"""
+
 # pieces labeled with any character.  "-" means no label or None
 CLOCK_CUBE_LABELS = """
     924
@@ -50,7 +63,7 @@ TMW1_PEOPLE = [
 ]
 
 # pieces labeled with any character.  "-" means no label or None
-TMW_CUBE_LABELS = """
+TMW_CUBE_LABELS_TENTITIVE = """
     CEK
     B?L
     D-S
@@ -60,6 +73,20 @@ ANJ -M- NVL ?-?
     ?GG
     ?E?
     ?-M
+"""
+
+
+# pieces labeled with any character.  "-" means no label or None
+TMW_CUBE_LABELS = """
+    CEK
+    B-L
+    D-S
+J-L -T- M-- ---
+ANJ -M- NVL ---
+--- -W- H-S ---
+    -GG
+    -E-
+    --M
 """
 
 # pieces labeled with any character.  "-" means no label or None
@@ -173,7 +200,7 @@ def run():
 
     if True:
         #C = Cube(TEST_CUBE_STR)
-        C = random_cube()
+        C = random_cube(CUBE_COLORS)        
 
         # rotate cube so we will solve the white side
         C.orientToFront()
@@ -182,11 +209,15 @@ def run():
         actualCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS, TMW_CUBE_GROUPS)
         print("starting cube:")
         print(actualCube)
+        
+
+        
         if True:
             # New way
             for person in TMW1_PEOPLE:
                 print("Solving for: ", person)
                 peopleSolver = Solver(actualCube, groups=TMW_CUBE_GROUPS)
+                
                 #peopleSolver = Solver(actualCube, solvedCubes[person].labels_cube, TMW_CUBE_GROUPS)
                 peopleSolver.solveFrontString(person)
                 print(peopleSolver.cube)

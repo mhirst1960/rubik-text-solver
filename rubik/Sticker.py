@@ -20,10 +20,16 @@ class Sticker:
 
     colorLookup = {'W':Color.B_White, 'B':Color.B_Blue, 'Y':Color.B_Yellow, 'G':Color.B_Green, 'O':Color.B_Orange, 'R':Color.B_Red}
 
+    def destinationStr(self):
+        if self.destination == None:
+            return '?'
+        else:
+            return self.destination
+        
     def __str__(self):
         colorModify=self.colorLookup[self.color]
         #return f"{colorModify}{self.destination}{Color.F_Default}"
-        return f"{colorModify}{Color.F_Black}{self.label} {Color.B_Default}{Color.F_Default}"
+        #return f"{colorModify}{Color.F_Black}{self.label} {Color.B_Default}{Color.F_Default}"
         #return f"{colorModify}({self.label}{self.group}){Color.F_Default}"
-        #return f"{colorModify}({self.label}{self.destination}{self.group}){Color.F_Default}"
+        return f"{colorModify}{Color.F_Black}({self.label}{self.destinationStr()}{self.group}){Color.B_Default}{Color.F_Default}"
    

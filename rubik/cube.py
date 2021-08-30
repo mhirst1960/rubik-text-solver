@@ -1,6 +1,7 @@
 import string
 import textwrap
 
+import rubik.Rotations as rot
 from rubik.maths import Point, Matrix
 from rubik.Piece import Piece
 
@@ -15,30 +16,6 @@ BACK           = Point(0, 0, -1)
 FACE = 'face'
 EDGE = 'edge'
 CORNER = 'corner'
-
-# 90 degree rotations in the XY plane. CW is clockwise, CC is counter-clockwise.
-ROT_XY_CW = Matrix(0, 1, 0,
-                   -1, 0, 0,
-                   0, 0, 1)
-ROT_XY_CC = Matrix(0, -1, 0,
-                   1, 0, 0,
-                   0, 0, 1)
-
-# 90 degree rotations in the XZ plane (around the y-axis when viewed pointing toward you).
-ROT_XZ_CW = Matrix(0, 0, -1,
-                   0, 1, 0,
-                   1, 0, 0)
-ROT_XZ_CC = Matrix(0, 0, 1,
-                   0, 1, 0,
-                   -1, 0, 0)
-
-# 90 degree rotations in the YZ plane (around the x-axis when viewed pointing toward you).
-ROT_YZ_CW = Matrix(1, 0, 0,
-                   0, 0, 1,
-                   0, -1, 0)
-ROT_YZ_CC = Matrix(1, 0, 0,
-                   0, 0, -1,
-                   0, 1, 0)
 
 
 def get_rot_from_face(face):
@@ -75,7 +52,7 @@ class Cube:
         assert all(p.type == EDGE for p in self.edges)
         assert all(p.type == CORNER for p in self.corners)
 
-    def __newPiece(self, pos, x, y, z):
+    def _newPiece(self, pos, x, y, z):
         # create a new piece
         if x == None:
             cx = None
@@ -158,36 +135,36 @@ class Cube:
         self.groups_str = groups_str
         
         self.faces = (
-            self.__newPiece(RIGHT, 28, None, None),
-            self.__newPiece(LEFT, 22, None, None),
-            self.__newPiece(UP,  None, 4, None),
-            self.__newPiece(DOWN, None, 49, None),
-            self.__newPiece(FRONT, None, None, 25),
-            self.__newPiece(BACK, None, None, 31),
+            self._newPiece(RIGHT, 28, None, None),
+            self._newPiece(LEFT, 22, None, None),
+            self._newPiece(UP,  None, 4, None),
+            self._newPiece(DOWN, None, 49, None),
+            self._newPiece(FRONT, None, None, 25),
+            self._newPiece(BACK, None, None, 31),
             )
         self.edges = (
-            self.__newPiece(RIGHT + UP,    16, 5, None),
-            self.__newPiece(RIGHT + DOWN,  40, 50, None),
-            self.__newPiece(RIGHT + FRONT, 27, None, 26),
-            self.__newPiece(RIGHT + BACK,  29, None, 30),
-            self.__newPiece(LEFT + UP,     10, 3, None),
-            self.__newPiece(LEFT + DOWN,   34, 48, None),
-            self.__newPiece(LEFT + FRONT,  23, None, 24),
-            self.__newPiece(LEFT + BACK,   21, None, 32),
-            self.__newPiece(UP + FRONT,    None, 7, 13),
-            self.__newPiece(UP + BACK,     None, 1, 19),
-            self.__newPiece(DOWN + FRONT,  None, 46, 37),
-            self.__newPiece(DOWN + BACK,   None, 52, 43),
+            self._newPiece(RIGHT + UP,    16, 5, None),
+            self._newPiece(RIGHT + DOWN,  40, 50, None),
+            self._newPiece(RIGHT + FRONT, 27, None, 26),
+            self._newPiece(RIGHT + BACK,  29, None, 30),
+            self._newPiece(LEFT + UP,     10, 3, None),
+            self._newPiece(LEFT + DOWN,   34, 48, None),
+            self._newPiece(LEFT + FRONT,  23, None, 24),
+            self._newPiece(LEFT + BACK,   21, None, 32),
+            self._newPiece(UP + FRONT,    None, 7, 13),
+            self._newPiece(UP + BACK,     None, 1, 19),
+            self._newPiece(DOWN + FRONT,  None, 46, 37),
+            self._newPiece(DOWN + BACK,   None, 52, 43),
         )
         self.corners = (
-            self.__newPiece(RIGHT + UP + FRONT,   15, 8, 14),
-            self.__newPiece(RIGHT + UP + BACK,    17, 2, 18),
-            self.__newPiece(RIGHT + DOWN + FRONT, 39, 47, 38),
-            self.__newPiece(RIGHT + DOWN + BACK,  41, 53, 42),
-            self.__newPiece(LEFT + UP + FRONT,    11, 6, 12),
-            self.__newPiece(LEFT + UP + BACK,     9, 0, 20),
-            self.__newPiece(LEFT + DOWN + FRONT,  35, 45, 36),
-            self.__newPiece(LEFT + DOWN + BACK,   33, 51, 44),
+            self._newPiece(RIGHT + UP + FRONT,   15, 8, 14),
+            self._newPiece(RIGHT + UP + BACK,    17, 2, 18),
+            self._newPiece(RIGHT + DOWN + FRONT, 39, 47, 38),
+            self._newPiece(RIGHT + DOWN + BACK,  41, 53, 42),
+            self._newPiece(LEFT + UP + FRONT,    11, 6, 12),
+            self._newPiece(LEFT + UP + BACK,     9, 0, 20),
+            self._newPiece(LEFT + DOWN + FRONT,  35, 45, 36),
+            self._newPiece(LEFT + DOWN + BACK,   33, 51, 44),
         )
 
         self.pieces = self.faces + self.edges + self.corners
@@ -233,30 +210,30 @@ class Cube:
             piece.rotate(matrix)
 
     # Rubik's Cube Notation: http://ruwix.com/the-rubiks-cube/notation/
-    def L(self):  self._rotate_face(LEFT, ROT_YZ_CC)
-    def Li(self): self._rotate_face(LEFT, ROT_YZ_CW)
-    def R(self):  self._rotate_face(RIGHT, ROT_YZ_CW)
-    def Ri(self): self._rotate_face(RIGHT, ROT_YZ_CC)
-    def U(self):  self._rotate_face(UP, ROT_XZ_CW)
-    def Ui(self): self._rotate_face(UP, ROT_XZ_CC)
-    def D(self):  self._rotate_face(DOWN, ROT_XZ_CC)
-    def Di(self): self._rotate_face(DOWN, ROT_XZ_CW)
-    def F(self):  self._rotate_face(FRONT, ROT_XY_CW)
-    def Fi(self): self._rotate_face(FRONT, ROT_XY_CC)
-    def B(self):  self._rotate_face(BACK, ROT_XY_CC)
-    def Bi(self): self._rotate_face(BACK, ROT_XY_CW)
-    def M(self):  self._rotate_slice(Y_AXIS + Z_AXIS, ROT_YZ_CC)
-    def Mi(self): self._rotate_slice(Y_AXIS + Z_AXIS, ROT_YZ_CW)
-    def E(self):  self._rotate_slice(X_AXIS + Z_AXIS, ROT_XZ_CC)
-    def Ei(self): self._rotate_slice(X_AXIS + Z_AXIS, ROT_XZ_CW)
-    def S(self):  self._rotate_slice(X_AXIS + Y_AXIS, ROT_XY_CW)
-    def Si(self): self._rotate_slice(X_AXIS + Y_AXIS, ROT_XY_CC)
-    def X(self):  self._rotate_pieces(self.pieces, ROT_YZ_CW)
-    def Xi(self): self._rotate_pieces(self.pieces, ROT_YZ_CC)
-    def Y(self):  self._rotate_pieces(self.pieces, ROT_XZ_CW)
-    def Yi(self): self._rotate_pieces(self.pieces, ROT_XZ_CC)
-    def Z(self):  self._rotate_pieces(self.pieces, ROT_XY_CW)
-    def Zi(self): self._rotate_pieces(self.pieces, ROT_XY_CC)
+    def L(self):  self._rotate_face(LEFT, rot.ROT_YZ_CC)
+    def Li(self): self._rotate_face(LEFT, rot.ROT_YZ_CW)
+    def R(self):  self._rotate_face(RIGHT, rot.ROT_YZ_CW)
+    def Ri(self): self._rotate_face(RIGHT, rot.ROT_YZ_CC)
+    def U(self):  self._rotate_face(UP, rot.ROT_XZ_CW)
+    def Ui(self): self._rotate_face(UP, rot.ROT_XZ_CC)
+    def D(self):  self._rotate_face(DOWN, rot.ROT_XZ_CC)
+    def Di(self): self._rotate_face(DOWN, rot.ROT_XZ_CW)
+    def F(self):  self._rotate_face(FRONT, rot.ROT_XY_CW)
+    def Fi(self): self._rotate_face(FRONT, rot.ROT_XY_CC)
+    def B(self):  self._rotate_face(BACK, rot.ROT_XY_CC)
+    def Bi(self): self._rotate_face(BACK, rot.ROT_XY_CW)
+    def M(self):  self._rotate_slice(Y_AXIS + Z_AXIS, rot.ROT_YZ_CC)
+    def Mi(self): self._rotate_slice(Y_AXIS + Z_AXIS, rot.ROT_YZ_CW)
+    def E(self):  self._rotate_slice(X_AXIS + Z_AXIS, rot.ROT_XZ_CC)
+    def Ei(self): self._rotate_slice(X_AXIS + Z_AXIS, rot.ROT_XZ_CW)
+    def S(self):  self._rotate_slice(X_AXIS + Y_AXIS, rot.ROT_XY_CW)
+    def Si(self): self._rotate_slice(X_AXIS + Y_AXIS, rot.ROT_XY_CC)
+    def X(self):  self._rotate_pieces(self.pieces, rot.ROT_YZ_CW)
+    def Xi(self): self._rotate_pieces(self.pieces, rot.ROT_YZ_CC)
+    def Y(self):  self._rotate_pieces(self.pieces, rot.ROT_XZ_CW)
+    def Yi(self): self._rotate_pieces(self.pieces, rot.ROT_XZ_CC)
+    def Z(self):  self._rotate_pieces(self.pieces, rot.ROT_XY_CW)
+    def Zi(self): self._rotate_pieces(self.pieces, rot.ROT_XY_CC)
 
     def sequence(self, move_str):
         """
@@ -285,16 +262,29 @@ class Cube:
                     return p
 
     # find a piece based on the intended solved orientation directions
-    def findPieceByLabelAndGroup(self, label, group):
+    def findPieceByLabelAndGroupWithNoDestination(self, label, group, type=None):
         for p in self.pieces:
             if p.group != group:
                 continue
-            labels = p.getLabels()
-            for l in labels:
-                if l == label:
-                    return p
+            if type!=p.type and type != None:
+                continue
+            destinations = p.getDestinations()
+            if all(d is None for d in destinations):
+                labels = p.getLabels()
+                for l in labels:
+                    if l == label:
+                        return p
         return None
+    
+    def clearAllDestinations(self):
+        # for every non-center piece in the cube if a destination was previously assigned, clear it.ArithmeticError
+        for p in self.pieces:
+            p.clearDestinations()   
                 
+    def getFrontPieces(self):
+        front = [p for p in sorted(self._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))]
+        return front
+        
     def get_piece(self, x, y, z):
         """
         :return: the Piece at the given Point
@@ -375,7 +365,21 @@ class Cube:
         self.sequence(move)
         #print("front color should be ", color, ". It is: ", self.front_color())
 
-        up = self.findPieceByDestinations('U')
+        up    = self.findPieceByDestinations('U')
+        down  = self.findPieceByDestinations('D')
+        left  = self.findPieceByDestinations('L')
+        right = self.findPieceByDestinations('R')
+        back  = self.findPieceByDestinations('B')
+        
+        if up == None or down == None or left == None or right == None or back == None:
+            # at least one face destination is unassigned.  Simply assign based on current position and return.
+            self.upSticker().destination = 'U'
+            self.downSticker().destination = 'D'
+            self.leftSticker().destination = 'L'
+            self.rightSticker().destination = 'R'
+            self.backSticker().destination = 'B'
+            return
+        
         move = ""
 
         if up.pos[0] == 1:

@@ -2,6 +2,7 @@ import string
 import textwrap
 
 from rubik.Sticker import Sticker
+import rubik.Rotations
 
 FACE = 'face'
 EDGE = 'edge'
@@ -25,12 +26,16 @@ class Piece:
         self.inSolvedPosition = False
         self.stickers = list()
 
+        #TODO kind of redundent to save solved faces and solvedPos both.  Should remove solved faces.
         # Face directions for this piece in solved position
         if solvedFaces == None:
             #self.solvedFaces = list()
-            self.solvedFaces = self.__getSolvedFacesFromPostions__()
+            self.solvedPos = pos
+            self.solvedFaces = self._getSolvedFacesFromPostions()
+
         else:
             self.solvedFaces = list(solvedFaces)
+            self.solvedPos = self._getSolvedPosFromFaces()
             
         if not labels == None:
           assert len(labels) == 3
@@ -66,7 +71,7 @@ class Piece:
         
         for c,l,g,f in stickers:
             if c is not None and l is not None:
-                sticker = Sticker(c, l, g, f) #TODO should include solved faces
+                sticker = Sticker(c, l, g, f)
             else:
                 sticker = None
 
@@ -77,17 +82,33 @@ class Piece:
 
         self._set_piece_type()
 
-    def __getSolvedFacesFromPostions__(self):
+    def _getSolvedFacesFromPostions(self, pos=None):
+        
+        if pos == None:
+            pos = self.solvedPos
+            
         x = {-1:'L', 0:None, 1:'R'}
         y = {-1:'D', 0:None, 1:'U'}
         z = {-1:'B', 0:None, 1:'F'}
 
         solvedFaces = list()
-        solvedFaces += [x[self.pos.x]]
-        solvedFaces += [y[self.pos.y]]
-        solvedFaces += [z[self.pos.z]]
+        solvedFaces += [x[pos.x]]
+        solvedFaces += [y[pos.y]]
+        solvedFaces += [z[pos.z]]
         
         return solvedFaces
+    
+
+    def _getSolvedPosFromFaces(self):
+        x = {'L':-1, None:0, 'R':1}
+        y = {'D':-1, None:0, 'U':1}
+        z = {'B':-1, None:0, 'F':1}
+
+        solvedPos.x = [x[self.solvedFaces[0]]]
+        solvedPos.y = [y[self.solvedFaces[1]]]
+        solvedPos.z = [z[self.solvedFaces[2]]]
+        
+        return solvedPos
         
 #    def __str__(self):
 #        colors = "".join(c for c in self.colors if c is not None)
@@ -140,6 +161,15 @@ class Piece:
 
         return colors
 
+    def getColor(self, index):
+        if index < 0 or index > 2:
+            return None
+        
+        if self.stickers[index] == None:
+            return None
+        
+        return self.stickers[index].color
+    
     def getLabels(self):
         labels = list()
         for i, v in enumerate(self.stickers):
@@ -150,15 +180,30 @@ class Piece:
 
         return labels
 
+    def getLabel(self, index):
+        if index < 0 or index > 2:
+            return None
+        
+        if self.stickers[index] == None:
+            return None
+        
+        return self.stickers[index].label
+    
     def getDestinations(self):
         destinations = list()
         for i, v in enumerate(self.stickers):
-            if (v == None):
+            if v == None:
                 destinations += [None]
             else:
-                destinations += v.destination
+                destinations += [v.destination]
 
         return destinations
+  
+    def clearDestinations(self):
+        for s in self.stickers:
+            if s != None:
+                s.destination = None
+
     
     def rotate(self, matrix):
         """Apply the given rotation matrix to this piece."""
@@ -194,3 +239,106 @@ class Piece:
         #print("  new colors", self.colors)
         #print("  new labels", self.labels)
         #print("  new stickers", self.stickers)
+
+    #TODO this is duplicate code with rotate() maybe remove maybe not
+    def DELETEME_rotateDestination(self, matrix):
+        """Apply the given rotation matrix to the destination position of this piece."""
+        before = self.solvedPos
+        self.solvedPos = matrix * self.solvedPos
+
+        # we need to swap the positions of two things in self.colors so colors appear
+        # on the correct faces. rot gives us the axes to swap between.
+        rot = self.solvedPos - before
+        if not any(rot):
+            return  # no change occurred
+        if rot.count(0) == 2:
+            rot += matrix * rot
+
+        assert rot.count(0) == 1, (
+            f"There is a bug in the Piece.rotateDestination() method!"
+            f"\nbefore: {before}"
+            f"\nself.solvedPos: {self.solvedPos}"
+            f"\nrot: {rot}"
+        )
+        
+        self.solvedFaces = self._getSolvedFacesFromPostions()
+
+    def assignDestinationToFront(self, labelChar, solvedPosition):
+        """
+        Rotate destinations so label destination is to the front.
+        Other stickers are oriented based on solved position
+        """
+        
+        # 1 - make a cophy if self
+        # 2 - rotate copy
+        
+        rotated = False
+        
+        copyPiece = Piece(self.pos, self.colors, self.labels, self.group)
+
+        print("copyPiece: ", copyPiece, " pos=", copyPiece.pos, " goal= ", solvedPosition)
+        
+        rewind = list()
+        
+        for rot in range(4):
+            if copyPiece.getLabel(2) == labelChar:
+                rotated = True
+                break
+            copyPiece.rotate(rubik.Rotations.ROT_XZ_CW)
+            rewind += [rubik.Rotations.ROT_XZ_CC]
+            print("ROT_XY_CW copyPiece: ", copyPiece, " pos=", copyPiece.pos, " goal= ", solvedPosition)
+
+        if not rotated:
+            for rot in range(4):
+                if copyPiece.getLabel(2) == labelChar:
+                    rotated = True
+                    break
+                copyPiece.rotate(rubik.Rotations.ROT_YZ_CW)
+                rewind += [rubik.Rotations.ROT_YZ_CC]
+                print("ROT_XZ_CW copyPiece: ", copyPiece, " pos=", copyPiece.pos, " goal= ", solvedPosition)
+
+        # now rotate keeping front label in place until position is correct
+        
+        if copyPiece.pos[2] == -1:
+            copyPiece.rotate(rubik.Rotations.ROT_YZ_CW)
+            copyPiece.rotate(rubik.Rotations.ROT_YZ_CW)
+            rewind += [rubik.Rotations.ROT_YZ_CC]
+            rewind += [rubik.Rotations.ROT_YZ_CC]
+
+        
+        if rotated:
+            for rot in range (4):
+                if copyPiece.pos == solvedPosition:
+                    break
+                copyPiece.rotate(rubik.Rotations.ROT_XY_CW)
+                rewind += [rubik.Rotations.ROT_XY_CC]
+                print("final ROT_YZ_CW copyPiece: ", copyPiece, " pos=", copyPiece.pos, " goal= ", solvedPosition)
+                
+        assert copyPiece.pos == solvedPosition
+         
+        copyPiece.solvedFaces = copyPiece._getSolvedFacesFromPostions(solvedPosition)
+        copyPiece.solvedPos = solvedPosition
+        for i, sticker in enumerate(copyPiece.stickers):
+            if sticker != None:
+                sticker.destination = copyPiece.solvedFaces[i]
+        
+        #rotate the copy back to where it was when we started so it aligns with piece it was cloned from
+        for m in reversed(rewind):
+            copyPiece.rotate(m)
+            
+        # 3 - assign self destinations based on final position of copy
+        for i, sticker in enumerate(copyPiece.stickers):
+            if sticker != None:
+                self.stickers[i].destination = sticker.destination
+            
+        #i = 0
+        #for s in self.stickers:
+        #    if s != None:
+        #        s.destination = copyPiece.solvedFaces[i]
+        #    i+=1
+        
+        print ("char:", labelChar, "front in piece:", self)
+        print()
+                
+                
+            

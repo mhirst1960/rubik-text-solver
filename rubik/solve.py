@@ -1,5 +1,7 @@
 import sys
 import time
+
+import rubik.Rotations
 from rubik import cube
 from rubik.maths import Point
 
@@ -42,6 +44,10 @@ class Solver:
 
     def solveFrontString(self, frontString):
         
+                        
+        # start fresh.  Destinations are assigned based on front string
+        self.cube.clearAllDestinations()
+        
         centerPieceGroup = self.cube.get_piece(0,0,1).group
         #self.rotateToFront(frontString[ord(centerPieceGroup)-ord('1')], centerPieceGroup)
 
@@ -51,16 +57,223 @@ class Solver:
         # later we can solve front based on orientations not colors.  Align orientations to match center pieces.
 
         print (self.cube)
+                
+        #1 how are groups divvied up in the in current front 9 pieces
+        currentFrontPieces= self.cube.getFrontPieces()
+        print ("current front pieces: ")
+        print(currentFrontPieces[0], " ", currentFrontPieces[1], " ", currentFrontPieces[2])
+        print(currentFrontPieces[3], "      ", currentFrontPieces[4], "      ", currentFrontPieces[5])
+        print(currentFrontPieces[6], " ", currentFrontPieces[7], " ", currentFrontPieces[8])
         
-        frontPieces = list()
+        #2 each character is in a different group. find pieces that have that group and character
+        futureFrontPieces = list()
         group = 1
         groupch = chr(ord('0') + group)
         for labelChar in frontString:
-            piece = self.cube.findPieceByLabelAndGroup(labelChar, groupch)
-            frontPieces += [piece]
+            print("ch=", labelChar, " group=", groupch)
+            labeledPiece = self.cube.findPieceByLabelAndGroupWithNoDestination(labelChar, groupch)
+            
+            assert labeledPiece != None
+
+            matched = False
+            for p in currentFrontPieces:
+                if p.group != groupch:
+                    continue
+                
+                rotated = False
+                if not matched and p.type == labeledPiece.type:
+                    print("future piece (before): ", labeledPiece)
+                    futureFrontPieces += [labeledPiece]
+
+                    labeledPiece.assignDestinationToFront(labelChar, p.pos)
+
+                    print("        piece = ", labeledPiece)
+
+                    matched = True
+                else:
+                    blankPiece = self.cube.findPieceByLabelAndGroupWithNoDestination(label='-', group=groupch, type=p.type)
+                    print("future piece (before): ", blankPiece)
+                    
+                    assert blankPiece != None
+                    
+                    futureFrontPieces += [blankPiece]
+                    blankPiece.assignDestinationToFront('-', p.pos)
+ 
+                    print("        piece = ", blankPiece)
+                                                            
             group+=1
             groupch = chr(ord('0') + group)
-        print ("found front pieces: ", frontPieces)
+        print ("Future front pieces:  ")
+        print(futureFrontPieces[0], " ", futureFrontPieces[1], " ", futureFrontPieces[2])
+        print(futureFrontPieces[3], "      ", futureFrontPieces[4], "      ", futureFrontPieces[5])
+        print(futureFrontPieces[6], " ", futureFrontPieces[7], " ", futureFrontPieces[8])
+        print("")
+        
+        # now verify and assert that the front stickers contain the requested string
+        message = ""
+        for ffp in futureFrontPieces:
+            for s in ffp.stickers:
+                if s != None and s.destination == 'F':
+                    message += s.label
+        message = message.replace("-", "")
+        assert message == frontString
+        
+        self.cross()
+        self.cross_corners()
+        
+    def DELETEMEsolveFrontString(self, frontString):
+        
+        centerPieceGroup = self.cube.get_piece(0,0,1).group
+        #self.rotateToFront(frontString[ord(centerPieceGroup)-ord('1')], centerPieceGroup)
+
+        #TODO now assign orientation to 8 other pieces in front layer based on frontstring
+        # for each piece destined for the front, simply rotate the whole cube so that piece is placed correctly
+        # and assign orientation
+        # later we can solve front based on orientations not colors.  Align orientations to match center pieces.
+
+        print (self.cube)
+                
+        #1 how are groups divvied up in the in current front 9 pieces
+        currentFrontPieces= self.cube.getFrontPieces()
+        print ("current front pieces: ")
+        print(currentFrontPieces[0], " ", currentFrontPieces[1], " ", currentFrontPieces[2])
+        print(currentFrontPieces[3], "      ", currentFrontPieces[4], "      ", currentFrontPieces[5])
+        print(currentFrontPieces[6], " ", currentFrontPieces[7], " ", currentFrontPieces[8])
+        
+        #TODO clear destinations of current front pieces
+
+        #2 each character is in a different group. find pieces that have that group and character
+        futureFrontPieces = list()
+        group = 1
+        groupch = chr(ord('0') + group)
+        for labelChar in frontString:
+            labeledPiece = self.cube.findPieceByLabelAndGroupWithNoDestination(labelChar, groupch)
+            matched = False
+            for p in currentFrontPieces:
+                rotated = False
+                if p.group == groupch:
+                    if not matched and labeledPiece.type == p.type:
+                        print("future piece (before): ", labeledPiece)
+                        futureFrontPieces += [labeledPiece]
+                        #labeledPiece.solvedPos = p.pos
+                        #TODO: rotate destinations so label is asssigned 'F'
+                        #TODO: NO, should rotate solvedFaces so 'F' aligns with labelChar
+                        #TODO new stuff here....
+                        if True:
+                            labeledPiece.rotateDestinationToFront(labelChar, p.pos)
+                        """
+                        if False:
+                            for n in range(3):
+                                if labeledPiece.labels[n] == labelChar:
+                                    if n == 0:
+                                        other = 2
+                                    else:
+                                        other = n-1
+                                    if labeledPiece.stickers[n].destination == 'F':
+                                        break
+                                    if labeledPiece.stickers[other].destination != 'F':
+                                        if n == 2:
+                                            other = 0
+                                        else:
+                                            other = n+1
+                                            
+                                    print("before: other ", other, " = ", labeledPiece.stickers[other].destination)
+                                    print("        front ", n, " = ", labeledPiece.stickers[n].destination)
+                                    print("        piece = ", labeledPiece)
+                                    if False:
+                                        faceOther = labeledPiece.solvedFaces[other]
+                                        labeledPiece.solvedFaces[other] = labeledPiece.solvedFaces[n]
+                                        labeledPiece.solvedFaces[n] = faceOther
+                                    if False:
+                                        labeledPiece.rotateDestinationToFront(labelChar) #TODO NEW
+                                    if True:
+                                        for rot in range(4):
+                                            if labeledPiece.stickers[n].destination == 'F':
+                                                rotated = True
+                                                break
+                                            labeledPiece.rotateDestination(rubik.Rotations.ROT_XY_CW)
+                                        if not rotated:
+                                            for rot in range(4):
+                                                if labeledPiece.stickers[n].destination == 'F':
+                                                    rotated = True
+                                                    break
+                                                labeledPiece.rotateDestination(rubik.Rotations.ROT_XZ_CW)
+                                        
+                                        if not rotated:
+                                            for rot in range(4):
+                                                if labeledPiece.stickers[n].destination == 'F':
+                                                    rotated = True
+                                                    break
+                                                labeledPiece.rotateDestination(rubik.Rotations.ROT_YZ_CW)
+                                    if rotated:
+                                        break
+                                    """
+                            #print("future: other ", other, " = ", labeledPiece.stickers[other])
+                            #print("        front ", n, " = ", labeledPiece.stickers[n])
+                        print("        piece = ", labeledPiece)
+
+                        matched = True
+                else:
+                    blankPiece = self.cube.findPieceByLabelAndGroupWithNoDestination(label='-', group=groupch, type=p.type)
+                    print("future piece (before): ", blankPiece)
+                    futureFrontPieces += [blankPiece]
+                    blankPiece.solvedPos = p.pos
+
+                    if True:
+                        labeledPiece.rotateDestinationToFront(labelChar, p.pos)
+                    """    
+                    if False:
+                        #TODO: NO, should rotate solvedFaces so 'F' aligns with '-''
+                        for n in range(3):
+                            if blankPiece.labels[n] == '-':
+                                if n == 0:
+                                    other = 2
+                                else:
+                                    other = n-1
+                                if blankPiece.stickers[n].destination == 'F':
+                                    break
+                                if blankPiece.stickers[other].destination != 'F':
+                                    if n == 2:
+                                        other = 0
+                                    else:
+                                        other = n+1
+                                        
+                                if False:
+                                    faceOther = blankPiece.solvedFaces[other]
+                                    blankPiece.solvedFaces[other] = blankPiece.solvedFaces[n]
+                                    blankPiece.solvedFaces[n] = faceOther
+                                else:
+                                    for rot in range(4):
+                                        if blankPiece.stickers[n].destination == 'F':
+                                            rotated = True
+                                            break
+                                        blankPiece.rotateDestination(rubik.Rotations.ROT_XY_CW)
+                                    if not rotated:
+                                        for rot in range(4):
+                                            if blankPiece.stickers[n].destination == 'F':
+                                                rotated = True
+                                                break
+                                            blankPiece.rotateDestination(rubik.Rotations.ROT_XZ_CW)
+                                        
+                                if rotated:
+                                    break
+                                """
+                        #print("future: other ", other, " = ", labeledPiece.solvedFaces[other])
+                        #print("        front ", n, " = ", labeledPiece.solvedFaces[n])
+                    print("        piece = ", blankPiece)
+                                                            
+            group+=1
+            groupch = chr(ord('0') + group)
+        print ("Future front pieces:  ")
+        print(futureFrontPieces[0], " ", futureFrontPieces[1], " ", futureFrontPieces[2])
+        print(futureFrontPieces[3], "      ", futureFrontPieces[4], "      ", futureFrontPieces[5])
+        print(futureFrontPieces[6], " ", futureFrontPieces[7], " ", futureFrontPieces[8])
+        print("")
+
+        #3 if found piece matches group and type, assign its destination
+        #      and correct orientation: orient so sticker with that label is "front"
+        #      Or assign the destination to any "blank" label or that type in the same group
+        
             
     def move(self, move_str):
         self.moves.extend(move_str.split())
