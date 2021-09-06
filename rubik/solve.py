@@ -43,22 +43,25 @@ class Solver:
 
 
     def solveFrontString(self, frontString):
+        """
+        Solve the front layer such that the frontString string appears on that side of the cube.
+        Only the front palyer is solved since we don't really care how the rest of the cube looks
+        as long as the message shows up on the side we do care about.
         
+        Keep the front string very short.  For instance 3 letters for a person's initials.
+        "-" represents a blank.  "?" is unknown.  Otherwise, any ASCII character is good.
+        
+        Careful thought needs to be put into the placement of stickers on a cube such that all possoible
+        strings can be solved without interfering with eachother.  If you hit a bad assert then you
+        probably need to redesign the sticker arrangement on the cube.
+        """
                         
         # start fresh.  Destinations are assigned based on front string
         self.cube.clearAllDestinations()
         
         centerPieceGroup = self.cube.get_piece(0,0,1).group
-        #self.rotateToFront(frontString[ord(centerPieceGroup)-ord('1')], centerPieceGroup)
-
-        #TODO now assign orientation to 8 other pieces in front layer based on frontstring
-        # for each piece destined for the front, simply rotate the whole cube so that piece is placed correctly
-        # and assign orientation
-        # later we can solve front based on orientations not colors.  Align orientations to match center pieces.
-
-        print (self.cube)
                 
-        #1 how are groups divvied up in the in current front 9 pieces
+        #1 discover how are groups divvied up in the in current front 9 pieces
         currentFrontPieces= self.cube.getFrontPieces()
         
         #2 each character is in a different group. find pieces that have that group and character
@@ -104,6 +107,7 @@ class Solver:
         # rotate the entire cube and, if needed, assign non-front destinations
         self.cube.orientToFront()
         
+        # non-front destinations may have been newly assigned so reinitialize the center pieces
         self.left_piece  = self.cube.findPieceByDestinations('L')
         self.right_piece = self.cube.findPieceByDestinations('R')
         self.up_piece    = self.cube.findPieceByDestinations('U')
@@ -114,7 +118,7 @@ class Solver:
         
         self.cross()
         self.cross_corners()
-        
+        #Done. Do not solve the middle slice and back layer.  There is no need.  Besides: destinations have not been assigned.
 
         # Solved.  Verify and assert we got what we wanted
         message = ""
@@ -124,10 +128,6 @@ class Solver:
         message = front.replace("-", "")
         assert message == frontString.replace("-", "")
         
-        print ("------------------------------------------------------")
-        print("Solved: ", frontString, " = ", front)
-        print(self.cube)
-        time.sleep(1)
             
     def move(self, move_str):
         self.moves.extend(move_str.split())

@@ -28,6 +28,12 @@ class Sticker:
         else:
             return self.destination
         
+    def labelOrBlank(self):
+        if self.label in ['?', '-']:
+            return ' '
+        else:
+            return self.label
+        
     def __str__(self):
         #colorModify=self.colorLookup[self.color]  # actual colors
         colorModify=self.destinadtionColorLookup[self.destination] # color based on destination
@@ -35,5 +41,6 @@ class Sticker:
         #return f"{colorModify}{Color.F_Black}{self.label} {Color.B_Default}{Color.F_Default}"
         #return f"{colorModify}({self.label}{self.group}){Color.F_Default}"
         #return f"({self.label}{self.destinationStr()}{self.group})"
-        return f"{colorModify}{Color.F_Black}({self.label}{self.destinationStr()}{self.group}){Color.B_Default}{Color.F_Default}"
+        #return f"{colorModify}{Color.F_Black}({self.label}{self.destinationStr()}{self.group}){Color.B_Default}{Color.F_Default}"
+        return f"{colorModify}{Color.F_Black}{self.labelOrBlank()} {Color.B_Default}{Color.F_Default}"
    

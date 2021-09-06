@@ -206,9 +206,9 @@ def run():
         C.orientToFront()
 
         #actualCube = random_cube(TMW_CUBE_LABELS, TMW_CUBE_LABELS, TMW_CUBE_GROUPS)
-        actualCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS, TMW_CUBE_GROUPS)
+        tmwCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS, TMW_CUBE_GROUPS)
         print("starting cube:")
-        print(actualCube)
+        print(tmwCube)
         
 
         people = TMW1_PEOPLE
@@ -217,12 +217,15 @@ def run():
             print ("=============== test loop ", t, " =====================")
             random.shuffle(people)
             for person in people:
+                print ("------------------------------------------------------")
                 print("Solving for: ", person)
-                peopleSolver = Solver(actualCube, groups=TMW_CUBE_GROUPS)
+                peopleSolver = Solver(tmwCube, groups=TMW_CUBE_GROUPS)
                 
                 #peopleSolver = Solver(actualCube, solvedCubes[person].labels_cube, TMW_CUBE_GROUPS)
                 peopleSolver.solveFrontString(person)
-                print(peopleSolver.cube)
+                
+                print(tmwCube)
+                time.sleep(1)
 
 
         #solved_cube_strings = [ALT_CUBE_COLORS, ALT1_CUBE_COLORS]

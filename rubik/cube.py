@@ -457,19 +457,19 @@ class Cube:
 
     def __str__(self):
 
-        template = ("                {}{}{}\n"
-                    "                {}{}{}\n"
-                    "                {}{}{}\n"
+        template = ("       {}{}{}\n"
+                    "       {}{}{}\n"
+                    "       {}{}{}\n"
                     "\n"
                     "{}{}{} {}{}{} {}{}{} {}{}{}\n"
                     "{}{}{} {}{}{} {}{}{} {}{}{}\n"
                     "{}{}{} {}{}{} {}{}{} {}{}{}\n"
                     "\n"
-                    "                {}{}{}\n"
-                    "                {}{}{}\n"
-                    "                {}{}{}")
+                    "       {}{}{}\n"
+                    "       {}{}{}\n"
+                    "       {}{}{}")
 
-        return                ''.join(self._label_list()) + "\n                " + template.format(*self._sticker_list()).strip()
+        return                ''.join(self._label_list()) + "\n       " + template.format(*self._sticker_list()).strip()
 
 
 if __name__ == '__main__':
