@@ -19,6 +19,8 @@ class Sticker:
             self.destination = self.destinations[color]
 
     colorLookup = {'W':Color.B_White, 'B':Color.B_Blue, 'Y':Color.B_Yellow, 'G':Color.B_Green, 'O':Color.B_Orange, 'R':Color.B_Red}
+    destinadtionColorLookup = {'F':Color.B_White, 'U':Color.B_Blue, 'L':Color.B_Yellow, 'D':Color.B_Green, 'B':Color.B_Orange, 'R':Color.B_Red,
+                               '-':Color.B_DarkGray, '?':Color.B_DarkGray, None:Color.B_DarkGray}
 
     def destinationStr(self):
         if self.destination == None:
@@ -27,9 +29,11 @@ class Sticker:
             return self.destination
         
     def __str__(self):
-        colorModify=self.colorLookup[self.color]
+        #colorModify=self.colorLookup[self.color]  # actual colors
+        colorModify=self.destinadtionColorLookup[self.destination] # color based on destination
         #return f"{colorModify}{self.destination}{Color.F_Default}"
         #return f"{colorModify}{Color.F_Black}{self.label} {Color.B_Default}{Color.F_Default}"
         #return f"{colorModify}({self.label}{self.group}){Color.F_Default}"
+        #return f"({self.label}{self.destinationStr()}{self.group})"
         return f"{colorModify}{Color.F_Black}({self.label}{self.destinationStr()}{self.group}){Color.B_Default}{Color.F_Default}"
    

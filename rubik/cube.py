@@ -279,7 +279,7 @@ class Cube:
     def clearAllDestinations(self):
         # for every non-center piece in the cube if a destination was previously assigned, clear it.ArithmeticError
         for p in self.pieces:
-            p.clearDestinations()   
+            p.clearDestinations()
                 
     def getFrontPieces(self):
         front = [p for p in sorted(self._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))]
@@ -457,19 +457,19 @@ class Cube:
 
     def __str__(self):
 
-        template = ("       {}{}{}\n"
-                    "       {}{}{}\n"
-                    "       {}{}{}\n"
+        template = ("                {}{}{}\n"
+                    "                {}{}{}\n"
+                    "                {}{}{}\n"
                     "\n"
                     "{}{}{} {}{}{} {}{}{} {}{}{}\n"
                     "{}{}{} {}{}{} {}{}{} {}{}{}\n"
                     "{}{}{} {}{}{} {}{}{} {}{}{}\n"
                     "\n"
-                    "       {}{}{}\n"
-                    "       {}{}{}\n"
-                    "       {}{}{}")
+                    "                {}{}{}\n"
+                    "                {}{}{}\n"
+                    "                {}{}{}")
 
-        return      ''.join(self._label_list()) + "\n       " + template.format(*self._sticker_list()).strip()
+        return                ''.join(self._label_list()) + "\n                " + template.format(*self._sticker_list()).strip()
 
 
 if __name__ == '__main__':

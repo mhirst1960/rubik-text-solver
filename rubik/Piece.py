@@ -274,7 +274,7 @@ class Piece:
         
         rotated = False
         
-        copyPiece = Piece(self.pos, self.colors, self.labels, self.group)
+        copyPiece = Piece(self.pos, self.getColors(), self.getLabels(), self.group)
 
         print("copyPiece: ", copyPiece, " pos=", copyPiece.pos, " goal= ", solvedPosition)
         
