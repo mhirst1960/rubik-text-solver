@@ -60,17 +60,12 @@ class Solver:
                 
         #1 how are groups divvied up in the in current front 9 pieces
         currentFrontPieces= self.cube.getFrontPieces()
-        print ("current front pieces: ")
-        print(currentFrontPieces[0], " ", currentFrontPieces[1], " ", currentFrontPieces[2])
-        print(currentFrontPieces[3], "      ", currentFrontPieces[4], "      ", currentFrontPieces[5])
-        print(currentFrontPieces[6], " ", currentFrontPieces[7], " ", currentFrontPieces[8])
         
         #2 each character is in a different group. find pieces that have that group and character
         futureFrontPieces = list()
         group = 1
         groupch = chr(ord('0') + group)
         for labelChar in frontString:
-            print("ch=", labelChar, " group=", groupch)
             labeledPiece = self.cube.findPieceByLabelAndGroupWithNoDestination(labelChar, groupch)
             
             assert labeledPiece != None
@@ -82,32 +77,20 @@ class Solver:
                 
                 rotated = False
                 if not matched and p.type == labeledPiece.type:
-                    print("future piece (before): ", labeledPiece)
                     futureFrontPieces += [labeledPiece]
-
                     labeledPiece.assignDestinationToFront(labelChar, p.pos)
-
-                    print("        piece = ", labeledPiece)
-
                     matched = True
                 else:
                     blankPiece = self.cube.findPieceByLabelAndGroupWithNoDestination(label='-', group=groupch, type=p.type)
-                    print("future piece (before): ", blankPiece)
                     
                     assert blankPiece != None
                     
                     futureFrontPieces += [blankPiece]
                     blankPiece.assignDestinationToFront('-', p.pos)
- 
-                    print("        piece = ", blankPiece)
-                                                            
+                                                             
             group+=1
             groupch = chr(ord('0') + group)
-        print ("Future front pieces:  ")
-        print(futureFrontPieces[0], " ", futureFrontPieces[1], " ", futureFrontPieces[2])
-        print(futureFrontPieces[3], "      ", futureFrontPieces[4], "      ", futureFrontPieces[5])
-        print(futureFrontPieces[6], " ", futureFrontPieces[7], " ", futureFrontPieces[8])
-        print("")
+
         
         # now verify and assert that the front stickers contain the requested string
         message = ""
@@ -126,15 +109,13 @@ class Solver:
         self.up_piece    = self.cube.findPieceByDestinations('U')
         self.down_piece  = self.cube.findPieceByDestinations('D')
                 
-        print("Ready to be Solved:")
-        print(self.cube)
+        #print("Ready to be Solved:")
+        #print(self.cube)
         
         self.cross()
-        print ("crossed: ", self, cube)
         self.cross_corners()
         
-        print("Solved:")
-        print(self.cube)
+
         # Solved.  Verify and assert we got what we wanted
         message = ""
         FRONT = Point(0, 0, 1)
@@ -143,7 +124,10 @@ class Solver:
         message = front.replace("-", "")
         assert message == frontString.replace("-", "")
         
-       
+        print ("------------------------------------------------------")
+        print("Solved: ", frontString, " = ", front)
+        print(self.cube)
+        time.sleep(1)
             
     def move(self, move_str):
         self.moves.extend(move_str.split())
@@ -157,23 +141,13 @@ class Solver:
         fr_piece = self.cube.findPieceByDestinations('F', 'R')
         fu_piece = self.cube.findPieceByDestinations('F', 'U')
         fd_piece = self.cube.findPieceByDestinations('F', 'D')
-        
-        print("cross. place front: left and right..", self.cube)
-        
-
-        print("cross. fl_piece = ", fl_piece, fl_piece.pos, "left: ", self.left_piece.pos)
+                
         self._cross_left_or_right(fl_piece, self.left_piece, self.cube.leftDestination(), "L L", "E L Ei Li")
-        print("cross. fr_piece = ", fr_piece, fr_piece.pos, "right: ", self.right_piece.pos)
         self._cross_left_or_right(fr_piece, self.right_piece, self.cube.rightDestination(), "R R", "Ei R E Ri")
 
-        print("cross placed front: left and right ..", self.cube)
-
         self.move("Z")
-        print("cross after Z. place front: up and down..", self.cube)
 
-        print("cross. fd_piece = ", fd_piece, fd_piece.pos,"down: ", self.down_piece.pos)
         self._cross_left_or_right(fd_piece, self.down_piece, self.cube.leftDestination(), "L L", "E L Ei Li")
-        print("cross. fu_piece = ", fu_piece, fu_piece.pos, "up: ", self.up_piece.pos)
         self._cross_left_or_right(fu_piece, self.up_piece, self.cube.rightDestination(), "R R", "Ei R E Ri")
         self.move("Zi")
 
@@ -208,17 +182,13 @@ class Solver:
 
         assert edge_piece.pos.z == -1
 
-        print ("edge piece: ", edge_piece)
-        print ("face piece: ", face_piece)
         # piece is at z = -1, rotate to correct face (LEFT or RIGHT)
-        print("maybe move(b)..: ", self.cube)
         
         # rotate back layer until peice we want is aligned with its front destiny position
         count = 0
         while (edge_piece.pos.x, edge_piece.pos.y) != (face_piece.pos.x, face_piece.pos.y):
             self.move("B")
             count += 1
-            print("..moved(b): ", count, self.cube)
             if count == 4: # back where we started
                 print("ERROR: unsolvable cube? ", self.cube)
                 raise Exception("Stuck in loop - unsolvable cube?\n")
@@ -229,10 +199,8 @@ class Solver:
 
         # the piece is on the correct face on plane z = -1, but has two orientations
         if edge_piece.getDestinations()[0] == face_destination:
-            print ("move: ", move_1)
             self.move(move_1)
         else:
-            print ("move: ", move_2)
             self.move(move_2)
 
     def cross_corners(self):

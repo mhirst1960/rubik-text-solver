@@ -109,10 +109,7 @@ class Piece:
         solvedPos.z = [z[self.solvedFaces[2]]]
         
         return solvedPos
-        
-#    def __str__(self):
-#        colors = "".join(c for c in self.colors if c is not None)
-#        return f"({self.type}, {colors}, {self.pos})"
+
 
     def __str__(self):
         #stickers = "".join(s.color for s in self.stickers if s is not None)
@@ -225,43 +222,12 @@ class Piece:
             f"\nrot: {rot}"
         )
 
-        #print("swap:")
-        #print("  old colors", self.colors)
-        #print("  old labels", self.labels)
-        #print("  old stickers", self.stickers)
-
         # TODO someday remove colors and labels
         i, j = (i for i, x in enumerate(rot) if x != 0)
         self.colors[i], self.colors[j] = self.colors[j], self.colors[i]
         # TODO colors and labels are same object self.labels[i], self.labels[j] = self.labels[j], self.labels[i]
         self.stickers[i], self.stickers[j] = self.stickers[j], self.stickers[i]
 
-        #print("  new colors", self.colors)
-        #print("  new labels", self.labels)
-        #print("  new stickers", self.stickers)
-
-    #TODO this is duplicate code with rotate() maybe remove maybe not
-    def DELETEME_rotateDestination(self, matrix):
-        """Apply the given rotation matrix to the destination position of this piece."""
-        before = self.solvedPos
-        self.solvedPos = matrix * self.solvedPos
-
-        # we need to swap the positions of two things in self.colors so colors appear
-        # on the correct faces. rot gives us the axes to swap between.
-        rot = self.solvedPos - before
-        if not any(rot):
-            return  # no change occurred
-        if rot.count(0) == 2:
-            rot += matrix * rot
-
-        assert rot.count(0) == 1, (
-            f"There is a bug in the Piece.rotateDestination() method!"
-            f"\nbefore: {before}"
-            f"\nself.solvedPos: {self.solvedPos}"
-            f"\nrot: {rot}"
-        )
-        
-        self.solvedFaces = self._getSolvedFacesFromPostions()
 
     def assignDestinationToFront(self, labelChar, solvedPosition):
         """
@@ -275,8 +241,6 @@ class Piece:
         rotated = False
         
         copyPiece = Piece(self.pos, self.getColors(), self.getLabels(), self.group)
-
-        print("copyPiece: ", copyPiece, " pos=", copyPiece.pos, " goal= ", solvedPosition)
         
         rewind = list()
         
@@ -286,7 +250,6 @@ class Piece:
                 break
             copyPiece.rotate(rubik.Rotations.ROT_XZ_CW)
             rewind += [rubik.Rotations.ROT_XZ_CC]
-            print("ROT_XY_CW copyPiece: ", copyPiece, " pos=", copyPiece.pos, " goal= ", solvedPosition)
 
         if not rotated:
             for rot in range(4):
@@ -295,7 +258,6 @@ class Piece:
                     break
                 copyPiece.rotate(rubik.Rotations.ROT_YZ_CW)
                 rewind += [rubik.Rotations.ROT_YZ_CC]
-                print("ROT_XZ_CW copyPiece: ", copyPiece, " pos=", copyPiece.pos, " goal= ", solvedPosition)
 
         # now rotate keeping front label in place until position is correct
         
@@ -312,7 +274,6 @@ class Piece:
                     break
                 copyPiece.rotate(rubik.Rotations.ROT_XY_CW)
                 rewind += [rubik.Rotations.ROT_XY_CC]
-                print("final ROT_YZ_CW copyPiece: ", copyPiece, " pos=", copyPiece.pos, " goal= ", solvedPosition)
                 
         assert copyPiece.pos == solvedPosition
          
@@ -331,14 +292,7 @@ class Piece:
             if sticker != None:
                 self.stickers[i].destination = sticker.destination
             
-        #i = 0
-        #for s in self.stickers:
-        #    if s != None:
-        #        s.destination = copyPiece.solvedFaces[i]
-        #    i+=1
-        
-        print ("char:", labelChar, "front in piece:", self)
-        print()
+
                 
                 
             

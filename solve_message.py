@@ -211,10 +211,12 @@ def run():
         print(actualCube)
         
 
-        
-        if True:
-            # New way
-            for person in TMW1_PEOPLE:
+        people = TMW1_PEOPLE
+
+        for t in range(100):
+            print ("=============== test loop ", t, " =====================")
+            random.shuffle(people)
+            for person in people:
                 print("Solving for: ", person)
                 peopleSolver = Solver(actualCube, groups=TMW_CUBE_GROUPS)
                 
@@ -222,21 +224,6 @@ def run():
                 peopleSolver.solveFrontString(person)
                 print(peopleSolver.cube)
 
-        if False:
-            # old way using solved cubes
-            for person in TMW1_PEOPLE:
-                peopleSolver = Solver(
-                    actualCube, solvedCubes[person].labels_cube)
-                peopleSolver.rotateToFront()
-                print("actual cube now oriented with middle initial in front:")
-                print(peopleSolver.cube)
-                print("solving ", person, " to this: ")
-                print(peopleSolver.solved_cube)
-                #peopleSolver.front(person, TMW_CUBE_LABELS, TMW_CUBE_GROUPS)
-                peopleSolver.front()
-                print("person: ", person)
-                print(peopleSolver.cube)
-                actualCube = peopleSolver.cube
 
         #solved_cube_strings = [ALT_CUBE_COLORS, ALT1_CUBE_COLORS]
         #solved_cube_strings = [ALT_CUBE_COLORS]
