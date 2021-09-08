@@ -217,6 +217,8 @@ def run():
             print ("=============== test loop ", t, " =====================")
             random.shuffle(people)
             for person in people:
+
+
                 print ("------------------------------------------------------")
                 print("Solving for: ", person)
                 peopleSolver = Solver(tmwCube, groups=TMW_CUBE_GROUPS)
@@ -226,7 +228,8 @@ def run():
                 
                 print(tmwCube)
                 time.sleep(1)
-
+                scrambleMoves = " ".join(random.choices(MOVES, k=200))
+                tmwCube.sequence(scrambleMoves)
 
         #solved_cube_strings = [ALT_CUBE_COLORS, ALT1_CUBE_COLORS]
         #solved_cube_strings = [ALT_CUBE_COLORS]

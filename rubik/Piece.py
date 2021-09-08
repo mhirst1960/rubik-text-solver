@@ -88,7 +88,7 @@ class Piece:
             pos = self.solvedPos
             
         x = {-1:'L', 0:None, 1:'R'}
-        y = {-1:'D', 0:None, 1:'U'}
+        y = {-1:'U', 0:None, 1:'D'}
         z = {-1:'B', 0:None, 1:'F'}
 
         solvedFaces = list()

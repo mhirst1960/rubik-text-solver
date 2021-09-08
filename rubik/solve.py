@@ -1,12 +1,17 @@
 import sys
 import time
+import string
 
 import rubik.Rotations
 from rubik import cube
 from rubik.maths import Point
+from rubik.Piece import Piece
 
 DEBUG = True
 
+FACE = 'face'
+EDGE = 'edge'
+CORNER = 'corner'
 
 class Solver:
 
@@ -23,6 +28,37 @@ class Solver:
         self.right_piece = self.cube.findPieceByDestinations('R')
         self.up_piece    = self.cube.findPieceByDestinations('U')
         self.down_piece  = self.cube.findPieceByDestinations('D')
+        
+        if groups == None:
+            groups_str = "0" * 54  # everything is group "0"
+        else:
+            groups_str = "".join(x for x in groups if x not in string.whitespace)
+        
+        frontGroups = list()
+        for r in range(12, 15):
+            frontGroups += [groups_str[r]]
+        for r in range(24, 27):
+            frontGroups += [groups_str[r]]
+        for r in range(36, 39):
+            frontGroups += [groups_str[r]]
+        
+            
+        self.origionalFrontPieces = list()
+        groupIndex = 0
+        for y in range(-1,2):
+            for x in range(-1,2):
+                if x != 0 and y != 0:
+                    type = CORNER
+                    colors = ('W','W','W') # fake colors.  We don't care
+                elif x == 0 and y == 0:
+                    type = FACE
+                    colors = ('W', None, None) # fake colors.  We don't care
+                else:
+                    type = EDGE
+                    colors = ('W','W', None) # fake colors.  We don't care
+                self.origionalFrontPieces += [Piece(pos=Point(x,y,1), colors=colors, group=frontGroups[groupIndex])]
+                groupIndex += 1
+
 
     def solve(self):
         if DEBUG: print(self.cube)
@@ -58,13 +94,9 @@ class Solver:
                         
         # start fresh.  Destinations are assigned based on front string
         self.cube.clearAllDestinations()
-        
-        centerPieceGroup = self.cube.get_piece(0,0,1).group
-                
-        #1 discover how are groups divvied up in the in current front 9 pieces
-        currentFrontPieces= self.cube.getFrontPieces()
-        
-        #2 each character is in a different group. find pieces that have that group and character
+                                
+    
+        # each character is in a different group. find pieces that have that group and character
         futureFrontPieces = list()
         group = 1
         groupch = chr(ord('0') + group)
@@ -74,7 +106,8 @@ class Solver:
             assert labeledPiece != None
 
             matched = False
-            for p in currentFrontPieces:
+
+            for p in self.origionalFrontPieces:
                 if p.group != groupch:
                     continue
                 
@@ -101,21 +134,22 @@ class Solver:
             for s in ffp.stickers:
                 if s != None and s.destination == 'F':
                     message += s.label
-        message = message.replace("-", "")
-        assert message == frontString.replace("-", "")
+        m = message.replace("-", "")
+        assert m == frontString.replace("-", "")
         
         # rotate the entire cube and, if needed, assign non-front destinations
         self.cube.orientToFront()
         
-        # non-front destinations may have been newly assigned so reinitialize the center pieces
+        # non-front destinations may have been newly assigned so reinitialize the face pieces
         self.left_piece  = self.cube.findPieceByDestinations('L')
         self.right_piece = self.cube.findPieceByDestinations('R')
         self.up_piece    = self.cube.findPieceByDestinations('U')
         self.down_piece  = self.cube.findPieceByDestinations('D')
-                
-        #print("Ready to be Solved:")
-        #print(self.cube)
-        
+
+        ##########################################
+        # Setup complete. Now actually solve it!
+        ##########################################
+
         self.cross()
         self.cross_corners()
         #Done. Do not solve the middle slice and back layer.  There is no need.  Besides: destinations have not been assigned.
