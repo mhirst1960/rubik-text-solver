@@ -7,7 +7,7 @@ from rubik import cube
 from rubik.maths import Point
 from rubik.Piece import Piece
 
-DEBUG = True
+DEBUG = False
 
 FACE = 'face'
 EDGE = 'edge'

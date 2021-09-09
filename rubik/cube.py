@@ -171,16 +171,24 @@ class Cube:
 
         self._assert_data()
 
-    def is_solved(self):
+    def is_solved(self, message=None):
         def check(destinations):
             assert len(destinations) == 9
             return all(c == destinations[0] for c in destinations)
-        return (check([piece.stickers[2].destination for piece in self._face(FRONT)]) and
-                check([piece.stickers[2].destination for piece in self._face(BACK)]) and
-                check([piece.stickers[1].destination for piece in self._face(UP)]) and
-                check([piece.stickers[1].destination for piece in self._face(DOWN)]) and
-                check([piece.stickers[0].destination for piece in self._face(LEFT)]) and
-                check([piece.stickers[0].destination for piece in self._face(RIGHT)]))
+        
+        if message == None:
+            return (check([piece.stickers[2].destination for piece in self._face(FRONT)]) and
+                    check([piece.stickers[2].destination for piece in self._face(BACK)]) and
+                    check([piece.stickers[1].destination for piece in self._face(UP)]) and
+                    check([piece.stickers[1].destination for piece in self._face(DOWN)]) and
+                    check([piece.stickers[0].destination for piece in self._face(LEFT)]) and
+                    check([piece.stickers[0].destination for piece in self._face(RIGHT)]))
+        else:
+            # TODO: should check actual string on front face
+            solvedMessage = ""
+            front = ''.join([p.getLabels()[2] for p in sorted(self._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))])
+            solvedMessage = front.replace("-", "")
+            return message.replace("-", "") == solvedMessage
 
     def _face(self, axis):
         """

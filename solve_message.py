@@ -5,6 +5,7 @@ from rubik.cube import Cube
 from rubik.solve import Solver
 from rubik.optimize import optimize_moves
 
+
 CUBE_COLORS = """
     OOO
     OOO
@@ -207,137 +208,69 @@ def run():
 
         #actualCube = random_cube(TMW_CUBE_LABELS, TMW_CUBE_LABELS, TMW_CUBE_GROUPS)
         tmwCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS, TMW_CUBE_GROUPS)
-        print("starting cube:")
-        print(tmwCube)
+        #print("starting cube:")
+        #print(tmwCube)
         
 
         people = TMW1_PEOPLE
 
+
         for t in range(100):
-            print ("=============== test loop ", t, " =====================")
+            if DEBUG: print ("=============== test loop ", t, " =====================")
             random.shuffle(people)
             for person in people:
 
 
-                print ("------------------------------------------------------")
-                print("Solving for: ", person)
+                if DEBUG > 0: print ("------------------------------------------------------")
+                if DEBUG > 0: print("Solving for: ", person)
                 peopleSolver = Solver(tmwCube, groups=TMW_CUBE_GROUPS)
                 
                 #peopleSolver = Solver(actualCube, solvedCubes[person].labels_cube, TMW_CUBE_GROUPS)
+                start = time.time()
                 peopleSolver.solveFrontString(person)
+                duration = time.time() - start
                 
-                print(tmwCube)
-                time.sleep(1)
+
+                opt_moves = optimize_moves(peopleSolver.moves)
+                successes += 1
+                
+                if DEBUG > 0: print(tmwCube)
+                if DEBUG > 0: time.sleep(1)
+
+
+                if tmwCube.is_solved(person):
+                    opt_moves = optimize_moves(peopleSolver.moves)
+                    print(f"{person}:  {len(opt_moves)} moves: {' '.join(opt_moves)}")
+                    successes += 1
+                    avg_moves = (avg_moves * (successes - 1) + len(peopleSolver.moves)) / float(successes)
+                    avg_time = (avg_time * (successes - 1) + duration) / float(successes)
+                    avg_opt_moves = (avg_opt_moves * (successes - 1) + len(opt_moves)) / float(successes)
+                else:
+                    failures += 1
+                    print(f"Failed ({successes + failures}): {tmwCube.flat_str()}")
+
                 scrambleMoves = " ".join(random.choices(MOVES, k=200))
                 tmwCube.sequence(scrambleMoves)
 
-        #solved_cube_strings = [ALT_CUBE_COLORS, ALT1_CUBE_COLORS]
-        #solved_cube_strings = [ALT_CUBE_COLORS]
-        solved_cube_strings = [CUBE_COLORS]
-
-        #solved_cube = Cube(ALT_CUBE_COLORS)
-
-        for solved_cube_str in solved_cube_strings:
-            #solved_cube = Cube(solved_cube_str, labels=labels, groups=TMW_CUBE_GROUPS)
-            solved_cube = Cube(
-                solved_cube_str, labels=CLOCK_CUBE_LABELS, groups=CLOCK_CUBE_GROUPS)
-            #solved_cube = Cube(solved_cube_str, labels=CUBE_COLORS, groups=CLOCK_CUBE_GROUPS)
-
-            solver = Solver(C, solved_cube)
-
-            if DEBUG > 0:
-                print('Start:')
-                print(solver.cube)
-
-            if DEBUG > 2:
-                print("X^")
-                C.sequence("X")
-                print("front=", C.front_color())
-                print(solver.cube)
-
-                print("X^")
-                C.sequence("X")
-                print("front=", C.front_color())
-                print(solver.cube)
-
-                print("X^")
-                C.sequence("X")
-                print("front=", C.front_color())
-                print(solver.cube)
-
-                print("Y<")
-                C.sequence("Y")
-                print("front=", C.front_color())
-                print(solver.cube)
-
-                print("Y<")
-                C.sequence("Y")
-                print("front=", C.front_color())
-                print(solver.cube)
-
-                print("Y<")
-                C.sequence("Y")
-                print("front=", C.front_color())
-                print(solver.cube)
-
-                print("Y<")
-                C.sequence("Y")
-                print("front=", C.front_color())
-                print(solver.cube)
-
-                print("Z  >   ")
-                print("  ^  v ")
-                print("    <  ")
-
-                C.sequence("Z")
-                print("front=", C.front_color())
-                print(solver.cube)
-
-            start = time.time()
-
-
-            solver.cube.orientToFront()
-
-            if DEBUG > 0:
-                print('Front Solved:')
-                print(solver.cube)
-            if DEBUG > 1:
-                print("front colors:")
-                print("luf:   ", C.luf_left_color(),
-                      C.luf_up_color(), C.luf_front_color())
-                print("uf:    ", C.uf_up_color(), C.uf_front_color())
-                print("ruf:   ", C.ruf_right_color(),
-                      C.ruf_up_color(), C.ruf_front_color())
-                print("lf:    ", C.lf_left_color(), C.lf_front_color())
-                print("front: ", C.front_color())
-                print("rf:    ", C.rf_right_color(), C.rf_front_color())
-                print("ldf:   ", C.ldf_left_color(),
-                      C.ldf_down_color(), C.ldf_front_color())
-                print("df:    ", C.df_down_color(), C.df_front_color())
-                print("rdf:   ", C.rdf_right_color(),
-                      C.rdf_down_color(), C.rdf_front_color())
-
-            duration = time.time() - start
-
-            opt_moves = optimize_moves(solver.moves)
-            successes += 1
             total = successes + failures
             pass_percentage = 100 * successes / total
 
             avg_moves = (avg_moves * (successes - 1) +
-                         len(solver.moves)) / float(successes)
+                         len(peopleSolver.moves)) / float(successes)
             avg_time = (avg_time * (successes - 1) +
                         duration) / float(successes)
             avg_opt_moves = (avg_opt_moves * (successes - 1) +
                              len(opt_moves)) / float(successes)
 
+            print ("====================================")
             print(f"{total}: {successes} successes ({pass_percentage:0.3f}% passing)"
                   f" avg_moves={avg_moves:0.3f} avg_opt_moves={avg_opt_moves:0.3f}"
                   f" avg_time={avg_time:0.3f}s")
 
-            print(f"{len(opt_moves)} moves: {' '.join(opt_moves)}")
+            #print(f"{len(opt_moves)} moves: {' '.join(opt_moves)}")
+            print ("====================================")
 
 
 if __name__ == '__main__':
-    DEBUG = 1
+    DEBUG = 0
     run()
