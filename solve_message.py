@@ -48,8 +48,8 @@ TMW1_PEOPLE = [
     "DEH",  # Don
     "LMH",  # Linnea
     "EVH",  # Eric
-    "J-H",  # Julie Howe
-    "C-S",  # Caroline
+    "JZH",  # Julie Howe
+    "CAM",  # Caroline
 
     "C-M",  # Chris
     "SJG",  # Sandy
@@ -61,6 +61,10 @@ TMW1_PEOPLE = [
     "DVG",  # Dan
     "BNG",  # Briana
     "LEG",  # Lily
+    
+    "SMT", # Steph
+    "MAL", # Steph's wife
+
 ]
 
 # pieces labeled with any character.  "-" means no label or None
@@ -69,9 +73,9 @@ TMW_CUBE_LABELS_TENTITIVE = """
     B?L
     D-S
 J?L -T- M?? ???
-ANJ -M- NVL ?-?
-??? -W- H?S ???
-    ?GG
+ANJ -M- NVL Z-?
+??T -W- H?S ???
+    LGG
     ?E?
     ?-M
 """
@@ -83,9 +87,9 @@ TMW_CUBE_LABELS = """
     B-L
     D-S
 J-L -T- M-- ---
-ANJ -M- NVL ---
---- -W- H-S ---
-    -GG
+ANJ -M- NVL Z--
+--T -W- H-S ---
+    LGG
     -E-
     --M
 """
@@ -221,8 +225,9 @@ def run():
             for person in people:
 
 
-                if DEBUG > 0: print ("------------------------------------------------------")
+                print ("------------------------------------------------------")
                 if DEBUG > 0: print("Solving for: ", person)
+                print ("Starting Cube: ", tmwCube.flat_str())
                 peopleSolver = Solver(tmwCube, groups=TMW_CUBE_GROUPS)
                 
                 #peopleSolver = Solver(actualCube, solvedCubes[person].labels_cube, TMW_CUBE_GROUPS)
@@ -241,6 +246,7 @@ def run():
                 if tmwCube.is_solved(person):
                     opt_moves = optimize_moves(peopleSolver.moves)
                     print(f"{person}:  {len(opt_moves)} moves: {' '.join(opt_moves)}")
+                    print ("Ending Cube:   ", tmwCube.flat_str())
                     successes += 1
                     avg_moves = (avg_moves * (successes - 1) + len(peopleSolver.moves)) / float(successes)
                     avg_time = (avg_time * (successes - 1) + duration) / float(successes)
