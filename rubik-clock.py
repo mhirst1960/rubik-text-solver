@@ -105,6 +105,9 @@ def getTime():
     if hours == 0:
         h = 12
         ap = "A"
+    elif hours == 12:
+        h = hours
+        ap = "P"
     elif hours > 12:
         h = hours-12
         ap = "P"
@@ -193,6 +196,6 @@ def run():
 
 if __name__ == '__main__':
     DEBUG = 1
-    hours = 0
+    hours = 23
     minutes = 56
     run()
