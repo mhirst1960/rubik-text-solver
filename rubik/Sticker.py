@@ -35,8 +35,8 @@ class Sticker:
             return self.label
         
     def __str__(self):
-        colorModify=self.colorLookup[self.color]  # actual colors
-        #colorModify=self.destinadtionColorLookup[self.destination] # color based on destination
+        #colorModify=self.colorLookup[self.color]  # actual colors
+        colorModify=self.destinadtionColorLookup[self.destination] # color based on destination
         #return f"{colorModify}{self.destination}{Color.F_Default}"
         #return f"{colorModify}{Color.F_Black}{self.label} {Color.B_Default}{Color.F_Default}"
         #return f"{colorModify}({self.label}{self.group}){Color.F_Default}"
