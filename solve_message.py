@@ -1,3 +1,5 @@
+#! /bin/python3
+
 import random
 import time
 from rubik import solve
@@ -18,33 +20,36 @@ GGG WWW BBB YYY
     RRR
 """
 
-
-USA_COLORS = """
-    OOO
-    OOO
-    OOO
-GGW BRR YBB YYY
-GGG WWW BBB YYY
-GGB RRR GBB YYY
-    WRW
-    RRR
-    WWW
+# pieces labeled with any character.  "-" means no label or None
+TMW_CUBE_LABELS = """
+    CEK
+    B-L
+    D-S
+J-L -T- --M ---
+ANJ -M- NVL Z--
+--T -W- H-S ---
+    LGG
+    -E-
+    --M
 """
 
 # pieces labeled with any character.  "-" means no label or None
-CLOCK_CUBE_LABELS = """
-    924
-    2-5
-    213
--11 00- 5-6 7-8
---0 -AM --1 -PM
---3 --- 5-6 8-9
-    402
-    9-3
-    714
+TMW_CUBE_GROUPS = """
+    111
+    121
+    111
+111 111 111 111
+222 222 222 222
+333 333 333 333
+    333
+    323
+    333
 """
 
+
 TMW1_PEOPLE = [
+    "TMW",  # The Mad Wrapper
+    
     "DEH",  # Don
     "LMH",  # Linnea
     "EVH",  # Eric
@@ -67,79 +72,6 @@ TMW1_PEOPLE = [
 
 ]
 
-# pieces labeled with any character.  "-" means no label or None
-TMW_CUBE_LABELS_TENTITIVE = """
-    CEK
-    B?L
-    D-S
-J?L -T- M?? ???
-ANJ -M- NVL Z-?
-??T -W- H?S ???
-    LGG
-    ?E?
-    ?-M
-"""
-
-
-# pieces labeled with any character.  "-" means no label or None
-TMW_CUBE_LABELS = """
-    CEK
-    B-L
-    D-S
-J-L -T- M-- ---
-ANJ -M- NVL Z--
---T -W- H-S ---
-    LGG
-    -E-
-    --M
-"""
-
-# pieces labeled with any character.  "-" means no label or None
-TMW_CUBE_GROUPS = """
-    111
-    121
-    111
-111 111 111 111
-222 222 222 222
-333 333 333 333
-    333
-    323
-    333
-"""
-
-# pieces labeled with any character.  "-" means no label or None
-ALPHABET_CUBE_LABELS = """
-    ABC
-    DEF
-    GHI
-JKL MNO PQR STU
-VWX YZa bcd efg
-hij klm nop qrs
-    tuv
-    wxy
-    z12
-"""
-
-# group pieces based on the clock digit each piece-face is used for
-# make sure all faces in a tuple are in the same group
-# group 1: 1x:xx
-# group 2: x1:xx
-# group 3: xx:1x
-# group 4: xx:x1
-# group 5: AP- (in AM, PM or none)
-# group 6: M-  (in AM/PM or none)
-
-CLOCK_CUBE_GROUPS = """
-    222
-    353
-    122
-231 122 232 222
-853 356 654 458
-443 344 444 454
-    344
-    454
-    454
-"""
 
 ALT_CUBE_COLORS = """
     OOB
@@ -165,21 +97,10 @@ GGG WRW BBB YYY
     RRR
 """
 
-TEST_CUBE_STR = """
-  ORB
-  YYG
-  RRY
-GBG WWO BWG RYW
-GRO GWO YOW OBR
-OYB YBG OOW RRY
-  RGB
-  WGB
-  WBY
-        """
 MOVES = ["L", "R", "U", "D", "F", "B", "M", "E", "S"]
 
 
-def random_cube(solvedString=CUBE_COLORS, labels=CLOCK_CUBE_LABELS, groups=CLOCK_CUBE_GROUPS):
+def random_cube(solvedString=CUBE_COLORS, labels=TMW_CUBE_LABELS, groups=TMW_CUBE_GROUPS):
     """
     :return: A new scrambled Cube
     """
@@ -278,5 +199,5 @@ def run():
 
 
 if __name__ == '__main__':
-    DEBUG = 0
+    DEBUG = 1
     run()
