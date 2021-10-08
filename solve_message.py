@@ -6,6 +6,7 @@ from rubik import solve
 from rubik.cube import Cube
 from rubik.solve import Solver
 from rubik.optimize import optimize_moves
+from rubik.RobotMoves import RobotMoves
 
 
 CUBE_COLORS = """
@@ -168,6 +169,11 @@ def run():
                     opt_moves = optimize_moves(peopleSolver.moves)
                     print(f"{person}:  {len(opt_moves)} moves: {' '.join(opt_moves)}")
                     print ("Ending Cube:   ", tmwCube.flat_str())
+                    robotMoves = RobotMoves()
+                    rm = robotMoves.optimize(peopleSolver.moves)
+                    print (f"{person}:  Robot moves normal: {len(rm)} moves: {' '.join(rm)}")
+                    rmo = robotMoves.optimize(opt_moves)
+                    print (f"{person}:  Robot moves opt   : {len(rmo)} moves: {' '.join(rmo)}")
                     successes += 1
                     avg_moves = (avg_moves * (successes - 1) + len(peopleSolver.moves)) / float(successes)
                     avg_time = (avg_time * (successes - 1) + duration) / float(successes)
