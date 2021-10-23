@@ -41,9 +41,23 @@ class Cube:
     """
 
     def _from_cube(self, c):
-        self.faces = [Piece(pos=Point(p.pos), colors=p.colors) for p in c.faces]
-        self.edges = [Piece(pos=Point(p.pos), colors=p.colors) for p in c.edges]
-        self.corners = [Piece(pos=Point(p.pos), colors=p.colors) for p in c.corners]
+        
+        self.faces = list()
+        self.edges = list()
+        self.corners = list()
+
+        for p in c.faces:
+            pos, colors, labels, group, solvedFaces = p.getAttributes()
+            self.faces.append(Piece(pos=pos, colors=colors, labels=labels, group=group, solvedFaces=solvedFaces))
+
+        for p in c.edges:
+            pos, colors, labels, group, solvedFaces = p.getAttributes()
+            self.edges.append(Piece(pos=pos, colors=colors, labels=labels, group=group, solvedFaces=solvedFaces))
+
+        for p in c.corners:
+            pos, colors, labels, group, solvedFaces = p.getAttributes()
+            self.corners.append(Piece(pos=pos, colors=colors, labels=labels, group=group, solvedFaces=solvedFaces))
+
         self.pieces = self.faces + self.edges + self.corners
 
     def _assert_data(self):
@@ -109,6 +123,11 @@ class Cube:
         So 18 (on the back) is directly under 12 (on the front)
         Each 'sticker' must be a single character.
         """
+        
+        # True: print Back stickers in same order as Front order. 1st stick is under 1st sticker
+        # False: print rotated 180 degrees, 1st sticker is under 3rd front sticker 
+        self.backViewIsXray = True
+                
         if isinstance(colors, Cube):
             self._from_cube(colors)
             return
@@ -170,6 +189,8 @@ class Cube:
         self.pieces = self.faces + self.edges + self.corners
 
         self._assert_data()
+        
+        self.orientToFront()
 
     def is_solved(self, message=None):
         def check(destinations):
@@ -177,12 +198,12 @@ class Cube:
             return all(c == destinations[0] for c in destinations)
         
         if message == None:
-            return (check([piece.stickers[2].destination for piece in self._face(FRONT)]) and
-                    check([piece.stickers[2].destination for piece in self._face(BACK)]) and
-                    check([piece.stickers[1].destination for piece in self._face(UP)]) and
-                    check([piece.stickers[1].destination for piece in self._face(DOWN)]) and
-                    check([piece.stickers[0].destination for piece in self._face(LEFT)]) and
-                    check([piece.stickers[0].destination for piece in self._face(RIGHT)]))
+            return (check([piece.getDestinations()[2] for piece in self._face(FRONT)]) and
+                    check([piece.getDestinations()[2] for piece in self._face(BACK)]) and
+                    check([piece.getDestinations()[1] for piece in self._face(UP)]) and
+                    check([piece.getDestinations()[1] for piece in self._face(DOWN)]) and
+                    check([piece.getDestinations()[0] for piece in self._face(LEFT)]) and
+                    check([piece.getDestinations()[0] for piece in self._face(RIGHT)]))
         else:
             # TODO: should check actual string on front face
             solvedMessage = ""
@@ -242,7 +263,19 @@ class Cube:
     def Yi(self): self._rotate_pieces(self.pieces, rot.ROT_XZ_CC)
     def Z(self):  self._rotate_pieces(self.pieces, rot.ROT_XY_CW)
     def Zi(self): self._rotate_pieces(self.pieces, rot.ROT_XY_CC)
-
+    def X2(self): self.X(); self.X()
+    def Y2(self): self.Y(); self.Y()
+    def Z2(self): self.Z(); self.Z()
+    def D2(self): self.D(); self.D()
+    def U2(self): self.U(); self.U()
+    def L2(self): self.L(); self.L()
+    def R2(self): self.R(); self.R()
+    def F2(self): self.F(); self.F()
+    def B2(self): self.B(); self.B()
+    def M2(self): self.M(); self.M()
+    def E2(self): self.E(); self.E()
+    def S2(self): self.S(); self.S()
+    
     def sequence(self, move_str):
         """
         :param moves: A string containing notated moves separated by spaces: "L Ri U M Ui B M"
@@ -288,7 +321,24 @@ class Cube:
         # for every non-center piece in the cube if a destination was previously assigned, clear it.ArithmeticError
         for p in self.pieces:
             p.clearDestinations()
-                
+            
+    def assignDefaultFaceDestinations(self):
+        for face in self.faces:
+            face.assignDefaultDestinations()
+        
+    def assignClearedDestinations(self):
+        """
+        find all pieces with no destination and assign a good default value
+        based on destinations already assigned
+        """
+        
+        for p in self.pieces:
+            if p.getDestinations() != [None, None, None]:
+                continue
+            
+            
+        assert false #TODO implement
+            
     def getFrontPieces(self):
         front = [p for p in sorted(self._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))]
         return front
@@ -308,7 +358,8 @@ class Cube:
         return self.get_piece(*args)
 
     def __eq__(self, other):
-        return isinstance(other, Cube) and self._sticker_list() == other._sticker_list()
+        return isinstance(other, Cube) and self.flat_str() == other.flat_str()
+        #return isinstance(other, Cube) and self.colors()() == other.colors()
 
     def __ne__(self, other):
         return not (self == other)
@@ -354,6 +405,7 @@ class Cube:
     def orientToFront(self):
         face = self.findPieceByDestinations('F')
         move = ""
+        moves = ""
 
         if face.pos[1] == 1:
             move = "Xi"
@@ -370,6 +422,7 @@ class Cube:
         else:
             print("ERROR: illegal color ", frontColor)
             
+        moves = move
         self.sequence(move)
         #print("front color should be ", color, ". It is: ", self.front_color())
 
@@ -386,7 +439,7 @@ class Cube:
             self.leftSticker().destination = 'L'
             self.rightSticker().destination = 'R'
             self.backSticker().destination = 'B'
-            return
+            return moves
         
         move = ""
 
@@ -403,19 +456,91 @@ class Cube:
         elif up.pos[1] == 1:
             move = ""
 
+        moves += " " + move
         self.sequence(move)
+        
+        if not moves.isspace():
+            print (f"moves: {moves}")
+        
+        return moves
 
-    def _color_list(self):
-        right = [p.colors[0] for p in sorted(self._face(RIGHT), key=lambda p: (-p.pos.y, -p.pos.z))]
-        left  = [p.colors[0] for p in sorted(self._face(LEFT),  key=lambda p: (-p.pos.y, p.pos.z))]
-        up    = [p.colors[1] for p in sorted(self._face(UP),    key=lambda p: (p.pos.z, p.pos.x))]
-        down  = [p.colors[1] for p in sorted(self._face(DOWN),  key=lambda p: (-p.pos.z, p.pos.x))]
-        front = [p.colors[2] for p in sorted(self._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))]
-        back  = [p.colors[2] for p in sorted(self._face(BACK),  key=lambda p: (-p.pos.y, p.pos.x))]
+    def orientToUp(self):
+        self.orientToFront()
+        self.sequence("X")
+        
+    def orient(self, direction="F"):
+        self.orientToFront()
+        
+        if direction == "F":
+            return
+        elif direction == "B":
+            self.sequence("Y2")
+        elif direction == "U":
+            self.sequence("X")
+        elif direction == "D":
+            self.sequence("Xi")
+        elif direction == "L":
+            self.sequence("Yi")
+        elif direction == "R":
+            self.sequence("Y")
+        
+    def orientToCube(self, cube):
+        
+        labels = cube.getLabels()
+        colors = cube.getColors()
+        
+        assert labels != None
+        
+        sortedLabelsUp = sorted(labels[:9])
+        sortedColorsUp = sorted(colors[:9])
+        foundUp = False
+        
+        for z in range(2):
+            for x in range(4):
+                if (sorted(self.getLabels()[:9]) == sortedLabelsUp
+                    and sorted(self.getColors()[:9]) == sortedColorsUp):
+                    foundUp = True
+                    break
+                self.sequence("X")
+            if foundUp:
+                break
+            self.sequence("Z")
+            
+        done = False
+
+        if foundUp:
+            labelsUp = labels[:9]
+            colorsUp = colors[:9]
+
+            for y in range(4):
+                if (self.getLabels() == labels):
+                    done = True
+                    break
+                self.sequence("Y")
+            
+        assert done
+            
+        
+    def colorList(self):
+        right = [p.getColor(0) for p in sorted(self._face(RIGHT), key=lambda p: (-p.pos.y, -p.pos.z))]
+        left  = [p.getColor(0) for p in sorted(self._face(LEFT),  key=lambda p: (-p.pos.y, p.pos.z))]
+        up    = [p.getColor(1) for p in sorted(self._face(UP),    key=lambda p: (p.pos.z, p.pos.x))]
+        down  = [p.getColor(1) for p in sorted(self._face(DOWN),  key=lambda p: (-p.pos.z, p.pos.x))]
+        front = [p.getColor(2) for p in sorted(self._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))]
+        if self.backViewIsXray:
+            back  = [p.getColor(2) for p in sorted(self._face(BACK),  key=lambda p: (-p.pos.y, p.pos.x))]
+        else:
+            back  = [p.getColor(2) for p in sorted(self._face(BACK),  key=lambda p: (-p.pos.y, -p.pos.x))]
 
         return (up + left[0:3] + front[0:3] + right[0:3] + back[0:3]
                    + left[3:6] + front[3:6] + right[3:6] + back[3:6]
                    + left[6:9] + front[6:9] + right[6:9] + back[6:9] + down)
+
+    def getColors(self):
+        return self.colorList()
+    
+    def colorString(self):
+        return "".join(x for x in self.colorList() if x not in string.whitespace)
 
     def _sticker_list(self):
         right = [p.stickers[0] for p in sorted(self._face(RIGHT), key=lambda p: (-p.pos.y, -p.pos.z))]
@@ -423,7 +548,10 @@ class Cube:
         up    = [p.stickers[1] for p in sorted(self._face(UP),    key=lambda p: (p.pos.z, p.pos.x))]
         down  = [p.stickers[1] for p in sorted(self._face(DOWN),  key=lambda p: (-p.pos.z, p.pos.x))]
         front = [p.stickers[2] for p in sorted(self._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))]
-        back  = [p.stickers[2] for p in sorted(self._face(BACK),  key=lambda p: (-p.pos.y, p.pos.x))]
+        if self.backViewIsXray:
+            back  = [p.stickers[2] for p in sorted(self._face(BACK),  key=lambda p: (-p.pos.y, p.pos.x))]
+        else:
+            back  = [p.stickers[2] for p in sorted(self._face(BACK),  key=lambda p: (-p.pos.y, -p.pos.x))]
 
         return (up + left[0:3] + front[0:3] + right[0:3] + back[0:3]
                    + left[3:6] + front[3:6] + right[3:6] + back[3:6]
@@ -454,14 +582,18 @@ class Cube:
         up    = [p.getLabels()[1] for p in sorted(self._face(UP),    key=lambda p: (p.pos.z, p.pos.x))]
         down  = [p.getLabels()[1] for p in sorted(self._face(DOWN),  key=lambda p: (-p.pos.z, p.pos.x))]
         front = [p.getLabels()[2] for p in sorted(self._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))]
-        back  = [p.getLabels()[2] for p in sorted(self._face(BACK),  key=lambda p: (-p.pos.y, p.pos.x))]
+        if self.backViewIsXray:
+            back  = [p.getLabels()[2] for p in sorted(self._face(BACK),  key=lambda p: (-p.pos.y, p.pos.x))]
+        else:
+            back  = [p.getLabels()[2] for p in sorted(self._face(BACK),  key=lambda p: (-p.pos.y, -p.pos.x))]
 
         return (up + left[0:3] + front[0:3] + right[0:3] + back[0:3]
                    + left[3:6] + front[3:6] + right[3:6] + back[3:6]
                    + left[6:9] + front[6:9] + right[6:9] + back[6:9] + down)
         
     def flat_str(self):
-        return "".join(x for x in str(self) if x not in string.whitespace)
+        return ''.join(self._label_list())
+        #return "".join(x for x in str(self) if x not in string.whitespace)
 
     def __str__(self):
 
@@ -478,6 +610,7 @@ class Cube:
                     "       {}{}{}")
 
         return                ''.join(self._label_list()) + "\n       " + template.format(*self._sticker_list()).strip()
+        #return                template.format(*self._sticker_list()).strip()
 
 
 if __name__ == '__main__':

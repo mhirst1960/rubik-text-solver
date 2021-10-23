@@ -3,6 +3,7 @@ import textwrap
 
 from rubik.Sticker import Sticker
 import rubik.Rotations
+from rubik.maths import Point
 
 FACE = 'face'
 EDGE = 'edge'
@@ -37,30 +38,31 @@ class Piece:
             self.solvedFaces = list(solvedFaces)
             self.solvedPos = self._getSolvedPosFromFaces()
             
-        if not labels == None:
-          assert len(labels) == 3
-          self.labels = list(labels)
-          #print("-------")
-          #print("New Piece. pos   = ", self.pos)
-          #print("New Piece. colors= ", self.colors)
-          #print("New Piece. labels= ", self.labels)
-          #print("New Piece. group = ", self.group)
+#        if not labels == None:
+#          assert len(labels) == 3
+#          self.labels = list(labels)
+#          #print("-------")
+#          #print("New Piece. pos   = ", self.pos)
+#          #print("New Piece. colors= ", self.colors)
+#          #print("New Piece. labels= ", self.labels)
+#          #print("New Piece. group = ", self.group)
 
 
 
-        else:
-          self.labels=self.colors
+#        else:
+        if labels == None:
+            labels=self.colors
 
         groups = list()
 
-        for l in self.labels:
+        for l in labels:
             if l == None:
                 groups = groups + [None]
             else:
                 groups = groups + [self.group]
 
 
-        stickers = zip(colors, self.labels, groups, self.solvedFaces)
+        stickers = zip(colors, labels, groups, self.solvedFaces)
 
         # each sticker has a color, a label, and a group
         # each piece is initialized with an array of three stickers
@@ -82,13 +84,17 @@ class Piece:
 
         self._set_piece_type()
 
+    def getAttributes(self):        
+        return self.pos, self.getColors(), self.getLabels(), self.group, self.solvedFaces
+            
+            
     def _getSolvedFacesFromPostions(self, pos=None):
         
         if pos == None:
             pos = self.solvedPos
             
         x = {-1:'L', 0:None, 1:'R'}
-        y = {-1:'U', 0:None, 1:'D'}
+        y = {-1:'D', 0:None, 1:'U'}
         z = {-1:'B', 0:None, 1:'F'}
 
         solvedFaces = list()
@@ -103,10 +109,18 @@ class Piece:
         x = {'L':-1, None:0, 'R':1}
         y = {'D':-1, None:0, 'U':1}
         z = {'B':-1, None:0, 'F':1}
-
-        solvedPos.x = [x[self.solvedFaces[0]]]
-        solvedPos.y = [y[self.solvedFaces[1]]]
-        solvedPos.z = [z[self.solvedFaces[2]]]
+        
+        px = x[self.solvedFaces[0]]
+        py = y[self.solvedFaces[1]]
+        pz = z[self.solvedFaces[2]]
+        
+        solvedPos = Point(px, py, pz)
+        
+#                          y[self.solvedFaces[1]],
+#                          z[self.solvedFaces[2]])
+        #solvedPos.x = [x[self.solvedFaces[0]]]
+        #solvedPos.y = [y[self.solvedFaces[1]]]
+        #solvedPos.z = [z[self.solvedFaces[2]]]
         
         return solvedPos
 
@@ -122,11 +136,11 @@ class Piece:
         labels = "".join(s.label for s in self.stickers if s is not None)
         return f"({self.type}, {labels}, {self.pos})"
       
-    def labelsDotNone(self, xyz):
-      if self.labels[xyz] == None:
-        return '.'
-      else:
-        return self.labels[xyz]
+#    def labelsDotNone(self, xyz):
+#      if self.labels[xyz] == None:
+#        return '.'
+#      else:
+#        return self.labels[xyz]
 
     def stickersDotNone(self, xyz):
       if self.stickers[xyz] == None:
@@ -177,6 +191,17 @@ class Piece:
 
         return labels
 
+    
+    def getGroups(self):
+        groups = list()
+        for i, v in enumerate(self.stickers):
+            if (v == None):
+                groups += [None]
+            else:
+                groups += v.group
+
+        return groups
+
     def getLabel(self, index):
         if index < 0 or index > 2:
             return None
@@ -201,7 +226,11 @@ class Piece:
             if s != None:
                 s.destination = None
 
-    
+    def assignDefaultDestinations(self):
+        for s in self.stickers:
+            if s != None:
+                s.setDefaultDestination()
+
     def rotate(self, matrix):
         """Apply the given rotation matrix to this piece."""
         before = self.pos
@@ -235,7 +264,7 @@ class Piece:
         Other stickers are oriented based on solved position
         """
         
-        # 1 - make a cophy if self
+        # 1 - make a copy of self
         # 2 - rotate copy
         
         rotated = False

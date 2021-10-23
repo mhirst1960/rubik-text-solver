@@ -17,6 +17,8 @@ class Solver:
 
     def __init__(self, c, groups=None):
         
+        self.origionalCubeLabels = c.getLabels()
+        
         c.orientToFront()
         
         self.cube = c
@@ -94,7 +96,7 @@ class Solver:
                         
         # start fresh.  Destinations are assigned based on front string
         self.cube.clearAllDestinations()
-                                
+        #self.cube.assignDefaultFaceDestinations()
     
         # each character is in a different group. find pieces that have that group and character
         futureFrontPieces = list()
@@ -137,9 +139,13 @@ class Solver:
         m = message.replace("-", "")
         assert m == frontString.replace("-", "")
         
-        # rotate the entire cube and, if needed, assign non-front destinations
-        self.cube.orientToFront()
+        print ("Cube before orient:\n", self.cube)
         
+        # rotate the entire cube and, if needed, assign non-front destinations
+        move_str = self.cube.orientToFront()
+        if move_str != None and not move_str.isspace():
+            self.moves.extend(move_str.split())
+
         # non-front destinations may have been newly assigned so reinitialize the face pieces
         self.left_piece  = self.cube.findPieceByDestinations('L')
         self.right_piece = self.cube.findPieceByDestinations('R')
@@ -150,10 +156,13 @@ class Solver:
         # Setup complete. Now actually solve it!
         ##########################################
 
+        print ("Cube before cross:\n", self.cube)
+
         self.cross()
         self.cross_corners()
         #Done. Do not solve the middle slice and back layer.  There is no need.  Besides: destinations have not been assigned.
-
+        self.alignToMessageOrder()
+        #print ("after cross_corners: ", self.cube)
         # Solved.  Verify and assert we got what we wanted
         message = ""
         FRONT = Point(0, 0, 1)
@@ -162,7 +171,23 @@ class Solver:
         message = front.replace("-", "")
         assert message == frontString.replace("-", "")
         
-            
+    def alignToMessageOrder(self):
+        """
+        rotate the cube so beginning of message is top-left and end if botto-left
+        Simply rotate around Z until groups are in increasing numberical order
+        """
+        FRONT = Point(0, 0, 1)
+
+        goodOrientation = False
+        for i in range (4):
+            frontGroups = [p.getGroups()[2] for p in sorted(self.cube._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))]
+            if all(frontGroups[i] <= frontGroups[i+1] for i in range(len(frontGroups)-1)):
+                goodOrientation = True
+                break
+            self.move("Z")
+        
+        assert goodOrientation
+        
     def move(self, move_str):
         self.moves.extend(move_str.split())
         self.cube.sequence(move_str)

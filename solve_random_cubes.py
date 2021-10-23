@@ -26,7 +26,9 @@ def random_cube():
     :return: A new scrambled Cube
     """
     scramble_moves = " ".join(random.choices(MOVES, k=200))
+    print ("scramble = ", scramble_moves)
     a = Cube(SOLVED_CUBE_STR)
+    print("unscrampled cube: ", a)
     a.sequence(scramble_moves)
     return a
 
@@ -42,8 +44,11 @@ def run():
     while True:
 
         C = random_cube()
+        C1 = Cube(C)
+        assert C == C1
         print("\n\n",C)
         C.orientToFront()
+        C1.orientToFront()
 
         #C.orientToFront()
         #print("\n\n", C)
@@ -54,7 +59,10 @@ def run():
         solver.solve()
         duration = time.time() - start
 
-
+        C1.sequence(" ".join(solver.moves))
+        print ("C1 = ", C1)
+        print(" ".join(solver.moves))
+        assert C == C1
 
         if C.is_solved():
             opt_moves = optimize_moves(solver.moves)
