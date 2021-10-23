@@ -47,6 +47,8 @@ def get_rot_table(rot):
 def _invert(move):
     if move.endswith('i'):
         return move[:1]
+    if move.endswith('2'):
+        return move
     return move + 'i'
 
 
@@ -76,6 +78,22 @@ def apply_do_undo_optimization(moves):
             i += 1
     if changed:
         apply_do_undo_optimization(moves)
+
+def apply_2_optimization(moves):
+    """ R R --> R2, is often faster for robots """
+    changed = False
+    i = 0
+    while i < len(moves) - 1:
+        if moves[i] == moves[i+1] and moves[i][-1:] != '2':
+            moves[i] = moves[i] + '2'
+            if moves[i][-2:] == 'i2':
+                moves[i] = moves[i][:1] + '2' # Ri2 -> R2
+            del moves[i+1]
+            changed = True
+        else:
+            i += 1
+    if changed:
+        apply_2_optimization(moves)
 
 
 def _unrotate(rot, moves):

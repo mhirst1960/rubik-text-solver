@@ -222,7 +222,7 @@ def run():
     avg_time = 0.0
 
     # testing robot moves    
-    if True:
+    if False:
         robotMoves = RobotMoves()
         a = Cube(CUBE_COLORS, TMW_CUBE_LABELS, TMW_CUBE_GROUPS)
         print ("Initial cube: ", a)
@@ -253,7 +253,7 @@ def run():
             assert a == b
             assert a == c
             
-    if True:
+    if False:
         # testing moves that return back to origional configuration
         a = Cube(CUBE_COLORS, TMW_CUBE_LABELS, TMW_CUBE_GROUPS)
         b = Cube(CUBE_COLORS, TMW_CUBE_LABELS, TMW_CUBE_GROUPS)
@@ -330,7 +330,7 @@ def run():
                 
                 robotMoves = RobotMoves()
                 rmo = robotMoves.optimize(opt_moves)
-
+                    
                 robotCubeOpt.sequence(" ".join(rmo))
                 assert robotCubeOpt == analysisCube
                 
@@ -345,6 +345,7 @@ def run():
                         
                     print(f"{person}:  {len(opt_moves)} moves: {' '.join(opt_moves)}")
                     print(f"{person}:  {len(rm)}     robot moves: {' '.join(rm)}")
+                    print()
                     print(f"{person}:  {len(rmo)} robot opt moves: {' '.join(rmo)}")
                             
                     if DEBUG > 0: time.sleep(1)
