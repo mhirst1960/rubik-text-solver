@@ -459,9 +459,6 @@ class Cube:
         moves += " " + move
         self.sequence(move)
         
-        if not moves.isspace():
-            print (f"moves: {moves}")
-        
         return moves
 
     def orientToUp(self):

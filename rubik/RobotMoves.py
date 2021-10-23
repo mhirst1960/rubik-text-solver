@@ -1,3 +1,6 @@
+from rubik.optimize import optimize_moves
+from rubik.optimize import apply_do_undo_optimization
+from rubik.optimize import apply_repeat_three_optimization
 class RobotMoves:
     
     """
@@ -84,5 +87,8 @@ class RobotMoves:
         
         newMoves = self.convert(moves)
         
+        #optMoves = optimize_moves(newMoves)
+        apply_repeat_three_optimization(newMoves)
+        apply_do_undo_optimization(newMoves)
         # TODO optimize for minimal robot moves
         return newMoves

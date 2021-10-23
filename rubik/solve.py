@@ -139,7 +139,7 @@ class Solver:
         m = message.replace("-", "")
         assert m == frontString.replace("-", "")
         
-        print ("Cube before orient:\n", self.cube)
+        #print ("Cube before orient:\n", self.cube)
         
         # rotate the entire cube and, if needed, assign non-front destinations
         move_str = self.cube.orientToFront()
@@ -156,7 +156,7 @@ class Solver:
         # Setup complete. Now actually solve it!
         ##########################################
 
-        print ("Cube before cross:\n", self.cube)
+        #print ("Cube before cross:\n", self.cube)
 
         self.cross()
         self.cross_corners()
