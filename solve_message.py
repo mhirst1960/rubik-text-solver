@@ -218,6 +218,7 @@ def run():
     failures = 0
 
     avg_opt_moves = 0.0
+    avg_robot_moves = 0.0
     avg_moves = 0.0
     avg_time = 0.0
 
@@ -240,16 +241,16 @@ def run():
             if move == 'F':
                 print ('F')
             rm = robotMoves.convert([move])
-            rmo = robotMoves.optimize([move])
+            opt_robot_moves = robotMoves.optimize([move])
             solverA.move(move)
             solverB.move(" ".join(rm))
-            solverC.move(" ".join(rmo))
+            solverC.move(" ".join(opt_robot_moves))
             print ("a: ", a)
             print ("b: ", b)
             print ("c: ", c)
             print (f"move:           ({move})")
             print (f"robot move:     ({rm})")
-            print (f"optimize robot: ({rmo})")
+            print (f"optimize robot: ({opt_robot_moves})")
             assert a == b
             assert a == c
             
@@ -329,9 +330,9 @@ def run():
                 assert robotCube == analysisCube
                 
                 robotMoves = RobotMoves()
-                rmo = robotMoves.optimize(opt_moves)
+                opt_robot_moves = robotMoves.optimize(opt_moves)
                     
-                robotCubeOpt.sequence(" ".join(rmo))
+                robotCubeOpt.sequence(" ".join(opt_robot_moves))
                 assert robotCubeOpt == analysisCube
                 
                 if analysisCube.is_solved(person):
@@ -340,13 +341,13 @@ def run():
                         print (f"({person}) Solved analysis Cube:   \n", analysisCube)
                         print (f"Analysis  number of moves: ({len(opt_moves)})")
                         print (f"Robot     number of moves: ({len(rm)})")
-                        print (f"Robot opt number of moves: ({len(rmo)})")
+                        print (f"Robot opt number of moves: ({len(opt_robot_moves)})")
 
                         
                     print(f"{person}:  {len(opt_moves)} moves: {' '.join(opt_moves)}")
                     print(f"{person}:  {len(rm)}     robot moves: {' '.join(rm)}")
                     print()
-                    print(f"{person}:  {len(rmo)} robot opt moves: {' '.join(rmo)}")
+                    print(f"{person}:  {len(opt_robot_moves)} robot opt moves: {' '.join(opt_robot_moves)}")
                             
                     if DEBUG > 0: time.sleep(1)
                 
@@ -354,6 +355,7 @@ def run():
                     avg_moves = (avg_moves * (successes - 1) + len(peopleSolver.moves)) / float(successes)
                     avg_time = (avg_time * (successes - 1) + duration) / float(successes)
                     avg_opt_moves = (avg_opt_moves * (successes - 1) + len(opt_moves)) / float(successes)
+                    avg_robot_moves = (avg_robot_moves * (successes - 1) + len(opt_robot_moves)) / float(successes)
                 else:
                     failures += 1
                     print(f"Failed ({successes + failures}): {analysisCube.flat_str()}")
@@ -367,10 +369,13 @@ def run():
                         duration) / float(successes)
             avg_opt_moves = (avg_opt_moves * (successes - 1) +
                              len(opt_moves)) / float(successes)
+            avg_robot_moves = (avg_robot_moves * (successes - 1) +
+                             len(opt_robot_moves)) / float(successes)
 
             print ("====================================")
             print(f"{total}: {successes} successes ({pass_percentage:0.3f}% passing)"
                   f" avg_moves={avg_moves:0.3f} avg_opt_moves={avg_opt_moves:0.3f}"
+                  f" avg_robot_moves={avg_robot_moves:0.3f}"
                   f" avg_time={avg_time:0.3f}s")
 
             #print(f"{len(opt_moves)} moves: {' '.join(opt_moves)}")
