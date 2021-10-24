@@ -80,6 +80,10 @@ class Solver:
         if DEBUG: print('---\nSolved. Cube looks like this:\n', self.cube)
 
 
+    def generateCubeForMessage(self, message):
+        self.solveFrontString(message)
+        return cube.Cube(self.cube)
+        
     def solveFrontString(self, frontString):
         """
         Solve the front layer such that the frontString string appears on that side of the cube.

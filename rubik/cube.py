@@ -573,6 +573,40 @@ class Cube:
         else:
             return ''
 
+    def _group_list(self):
+        right = [p.getGroups()[0] for p in sorted(self._face(RIGHT), key=lambda p: (-p.pos.y, -p.pos.z))]
+        left  = [p.getGroups()[0] for p in sorted(self._face(LEFT),  key=lambda p: (-p.pos.y, p.pos.z))]
+        up    = [p.getGroups()[1] for p in sorted(self._face(UP),    key=lambda p: (p.pos.z, p.pos.x))]
+        down  = [p.getGroups()[1] for p in sorted(self._face(DOWN),  key=lambda p: (-p.pos.z, p.pos.x))]
+        front = [p.getGroups()[2] for p in sorted(self._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))]
+        if self.backViewIsXray:
+            back  = [p.getGroups()[2] for p in sorted(self._face(BACK),  key=lambda p: (-p.pos.y, p.pos.x))]
+        else:
+            back  = [p.getGroups()[2] for p in sorted(self._face(BACK),  key=lambda p: (-p.pos.y, -p.pos.x))]
+
+        return (up + left[0:3] + front[0:3] + right[0:3] + back[0:3]
+                   + left[3:6] + front[3:6] + right[3:6] + back[3:6]
+                   + left[6:9] + front[6:9] + right[6:9] + back[6:9] + down)
+        
+    def getGroups (self, face=None):
+        # get all stickers for the cube or a face
+        if face == None:
+            return self._group_list()
+        elif face == 'R':
+            return [p.getGroups()[0] for p in sorted(self._face(RIGHT), key=lambda p: (-p.pos.y, -p.pos.z))]
+        elif face == 'L':
+            return [p.getGroups()[0] for p in sorted(self._face(LEFT),  key=lambda p: (-p.pos.y, p.pos.z))]
+        elif face == 'U':
+            return [p.getGroups()[1] for p in sorted(self._face(UP),    key=lambda p: (p.pos.z, p.pos.x))]
+        elif face == 'D':
+            return [p.getGroups()[1] for p in sorted(self._face(DOWN),  key=lambda p: (-p.pos.z, p.pos.x))]
+        elif face == 'F':
+            return [p.getGroups()[2] for p in sorted(self._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))]
+        elif face == 'B':
+            return [p.getGroups()[2] for p in sorted(self._face(BACK),  key=lambda p: (-p.pos.y, p.pos.x))]
+        else:
+            return ''
+
     def _label_list(self):
         right = [p.getLabels()[0] for p in sorted(self._face(RIGHT), key=lambda p: (-p.pos.y, -p.pos.z))]
         left  = [p.getLabels()[0] for p in sorted(self._face(LEFT),  key=lambda p: (-p.pos.y, p.pos.z))]

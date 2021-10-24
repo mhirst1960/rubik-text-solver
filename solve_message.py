@@ -270,8 +270,39 @@ def run():
             assert a == initialCube
             assert b == initialCube
 
-
     if True:
+        
+        # generate some python output for a solved cube customized for each person
+        
+        print (f"CUBE_LABELS_COLOR_SOLVED = \"\"\"\n{TMW_CUBE_LABELS}\n\"\"\"")
+        print (f"CUBE_GROUPS_COLOR_SOLVED = \"\"\"\n{TMW_CUBE_GROUPS}\n\"\"\"")
+        print (f"CUBE_COLORS_COLOR_SOLVED = \"\"\"\n{CUBE_COLORS}\n\"\"\"")
+                    
+        analysisCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS, TMW_CUBE_GROUPS)
+
+        for person in TMW1_PEOPLE:
+            analysisCube.orientToFront()
+            peopleSolver = Solver(analysisCube, groups=TMW_CUBE_GROUPS)
+            personCube = peopleSolver.generateCubeForMessage(person)
+            #print (f"cube for {person}:\n", personCube)
+            personVariableSuffix = person.replace('-', '_')
+            print (f"CUBE_COLORS_{personVariableSuffix} = \"{''.join(personCube.getColors())}\"")
+            print (f"CUBE_LABELS_{personVariableSuffix} = \"{''.join(personCube.getLabels())}\"")
+            print (f"CUBE_GROUPS_{personVariableSuffix} = \"{''.join(personCube.getGroups())}\"")
+            print()
+
+        print ("tmwCubes = {\n")
+        for person in TMW1_PEOPLE:
+            personVariableSuffix = person.replace('-', '_')
+            print (f"        \"{person}\" : {{\"colors\" : \"{''.join(personCube.getColors())}\",")
+            print (f"                 \"labels\" : \"{''.join(personCube.getLabels())}\",")
+            print (f"                 \"groups\" : \"{''.join(personCube.getGroups())}\"}},")
+            print()
+        print ("}")
+
+
+
+    if False:
 
         analysisCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS, TMW_CUBE_GROUPS)
         realCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS, TMW_CUBE_GROUPS)
