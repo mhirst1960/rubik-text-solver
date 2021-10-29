@@ -2,8 +2,11 @@
 
 import random
 import time
+import re
+
 from rubik import solve
 from rubik.cube import Cube
+from rubik.CubeOrder import CubeOrder
 from rubik.solve import Solver
 from rubik.optimize import optimize_moves
 from rubik.RobotMoves import RobotMoves
@@ -271,14 +274,27 @@ def run():
             assert b == initialCube
 
     if True:
+        co = CubeOrder()
+        xray = re.sub(r'\s+', '', TMW_CUBE_LABELS)
+        #xray = ''.join(TMW_CUBE_LABELS.strip())
+        rotBack = co.convert(xray, co.SLICE_XRAYBACK, co.SLICE_ROTATED_BACK)
+        kociembaInpout = co.convert(xray, co.SLICE_XRAYBACK, co.KOCIEMBA_ORDER)
+        print (f"xray     = \"\"\"\n{xray}\n\"\"\"")
+        print (f"rot back = \"\"\"\n{rotBack}\n\"\"\"")
+        print (f"kociemba = \"\"\"\n{kociembaInpout}\n\"\"\"")
+        
+
+    if False:
         
         # generate some python output for a solved cube customized for each person
         
         print (f"CUBE_LABELS_COLOR_SOLVED = \"\"\"\n{TMW_CUBE_LABELS}\n\"\"\"")
         print (f"CUBE_GROUPS_COLOR_SOLVED = \"\"\"\n{TMW_CUBE_GROUPS}\n\"\"\"")
         print (f"CUBE_COLORS_COLOR_SOLVED = \"\"\"\n{CUBE_COLORS}\n\"\"\"")
-                    
+
         analysisCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS, TMW_CUBE_GROUPS)
+        
+        
 
         for person in TMW1_PEOPLE:
             analysisCube.orientToFront()
