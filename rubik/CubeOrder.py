@@ -127,10 +127,11 @@ class CubeOrder:
     # Other solvers represent INPUT/OUTPUT by unfolding the cube then simply reading order:
     # in top to bottom rows read left to right 
     
-    # Rotated back means we think of the Back as if viewed from below, looking up
+    # Unfold back means we think of the Back as if viewed from below, looking up
+    # as if unfolding a paper box and laying it down flat
     # The Back pieces retain their order as we rotate the entire cube around Z
     # Note: B7 is adjacent to R9
-    SLICE_ROTATED_BACK = [
+    SLICE_UNFOLD_BACK = [
                      U1, U2, U3,
                      U4, U5, U6,
                      U7, U8, U9,

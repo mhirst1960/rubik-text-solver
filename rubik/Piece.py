@@ -11,7 +11,7 @@ CORNER = 'corner'
 
 class Piece:
 
-    def __init__(self, pos, colors, labels=None, group='0', solvedFaces=None):
+    def __init__(self, pos, colors, labels=None, group='0', destinations=None):
         """
         :param pos: A tuple of integers (x, y, z) each ranging from -1 to 1
         :param colors: A tuple of length three (x, y, z) where each component gives the color
@@ -29,13 +29,13 @@ class Piece:
 
         #TODO kind of redundent to save solved faces and solvedPos both.  Should remove solved faces.
         # Face directions for this piece in solved position
-        if solvedFaces == None:
+        if destinations == None:
             #self.solvedFaces = list()
             self.solvedPos = pos
-            self.solvedFaces = self._getSolvedFacesFromPostions()
+            self.solvedFaces = self.getSolvedFacesFromPostions()
 
         else:
-            self.solvedFaces = list(solvedFaces)
+            self.solvedFaces = list(destinations)
             self.solvedPos = self._getSolvedPosFromFaces()
             
 #        if not labels == None:
@@ -85,10 +85,10 @@ class Piece:
         self._set_piece_type()
 
     def getAttributes(self):        
-        return self.pos, self.getColors(), self.getLabels(), self.group, self.solvedFaces
+        return self.pos, self.getColors(), self.getLabels(), self.group, self.getDestinations()
             
             
-    def _getSolvedFacesFromPostions(self, pos=None):
+    def getSolvedFacesFromPostions(self, pos=None):
         
         if pos == None:
             pos = self.solvedPos
@@ -105,14 +105,36 @@ class Piece:
         return solvedFaces
     
 
-    def _getSolvedPosFromFaces(self):
-        x = {'L':-1, None:0, 'R':1}
-        y = {'D':-1, None:0, 'U':1}
-        z = {'B':-1, None:0, 'F':1}
+    def setDestinationsFromPos(self, pos=None):
         
-        px = x[self.solvedFaces[0]]
-        py = y[self.solvedFaces[1]]
-        pz = z[self.solvedFaces[2]]
+        if pos == None:
+            pos = self.pos
+        
+        x = {-1:'L', 0:None, 1:'R'}
+        y = {-1:'D', 0:None, 1:'U'}
+        z = {-1:'B', 0:None, 1:'F'}
+        
+        destinations = [x[pos[0]], y[pos[1]], z[pos[2]]]
+        
+        for i, s in enumerate(self.stickers):
+            if s != None:
+                s.destination = destinations[i]
+ 
+        return destinations
+
+    def _getSolvedPosFromFaces(self):
+        
+        if all(f is None for f in self.solvedFaces):
+            return None
+            
+        #x = {'L':-1, None:0, 'R':1}
+        #y = {'D':-1, None:0, 'U':1}
+        #z = {'B':-1, None:0, 'F':1}
+        xyz = {None:0, 'L':-1, 'R':1, 'D':-1, 'U':1, 'B':-1, 'F':1}
+        
+        px = xyz[self.solvedFaces[0]]
+        py = xyz[self.solvedFaces[1]]
+        pz = xyz[self.solvedFaces[2]]
         
         solvedPos = Point(px, py, pz)
         
@@ -124,8 +146,23 @@ class Piece:
         
         return solvedPos
 
+    def stringDestinationsColored(self):
+        stickers = "".join(s.stringDestinationColored() for s in self.stickers if s is not None)
+        return f"({stickers})"
+    
+    def stringColored(self):
+        stickers = "".join(s.stringColored() for s in self.stickers if s is not None)
+        return f"({stickers})"
 
+    def stringUncolored(self):
+        stickers = "".join(s.stringUncolored() for s in self.stickers if s is not None)
+        return f"({stickers})"
+    
     def __str__(self):
+        return self.stringUncolored()
+        return self.stringColored()
+        return self.stringDestinationsColored()
+    
         #stickers = "".join(s.color for s in self.stickers if s is not None)
         stickers = "".join(str(s) for s in self.stickers if s is not None)
         #stickers = str(s) (stickerStr = for s in stickers str(s))
@@ -220,7 +257,24 @@ class Piece:
                 destinations += [v.destination]
 
         return destinations
-  
+ 
+    def getDestinationsNotNone(self):
+        
+        destinations = self.getDestinations()
+        for i, d in enumerate(destinations):
+            if d == None:
+                destinations[i] = '?'
+
+        return destinations
+ 
+    def setDestinations(self, piece):
+        for s in self.stickers:
+            if s != None:
+                for ps in piece.stickers:
+                    if ps != None and ps.color == s.color:
+                        s.destination = ps.destination
+                
+            
     def clearDestinations(self):
         for s in self.stickers:
             if s != None:
@@ -305,8 +359,9 @@ class Piece:
                 rewind += [rubik.Rotations.ROT_XY_CC]
                 
         assert copyPiece.pos == solvedPosition
-         
-        copyPiece.solvedFaces = copyPiece._getSolvedFacesFromPostions(solvedPosition)
+        assert copyPiece.getLabel(2) == labelChar
+        
+        copyPiece.solvedFaces = copyPiece.getSolvedFacesFromPostions(solvedPosition)
         copyPiece.solvedPos = solvedPosition
         for i, sticker in enumerate(copyPiece.stickers):
             if sticker != None:
@@ -320,8 +375,31 @@ class Piece:
         for i, sticker in enumerate(copyPiece.stickers):
             if sticker != None:
                 self.stickers[i].destination = sticker.destination
-            
-
-                
-                
-            
+    
+    def assignSecondaryAttributes(self, piece):
+        """
+        Assuming colors and position are correct, assugen new values from piece passed in.
+        Assing labels and groups to self from argument
+        """
+        
+        assert piece.type == self.type
+        numStickers = 0
+        assignedStickers = 0
+        
+        for pieceSticker in piece.stickers:
+            if pieceSticker == None:
+                continue
+            numStickers += 1
+            for selfSticker in self.stickers:
+                if selfSticker == None:
+                    continue
+                if pieceSticker.color == selfSticker.color:
+                    assignedStickers += 1
+                    selfSticker.label = pieceSticker.label
+                    selfSticker.group = pieceSticker.group
+                    selfSticker.destination = pieceSticker.destination
+                    self.group = pieceSticker.group
+                    
+                    
+        assert numStickers == assignedStickers
+        

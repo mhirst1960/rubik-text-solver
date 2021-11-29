@@ -4,6 +4,7 @@ import string
 
 import rubik.Rotations
 from rubik import cube
+from rubik.cube import Cube
 from rubik.maths import Point
 from rubik.Piece import Piece
 
@@ -15,16 +16,57 @@ CORNER = 'corner'
 
 class Solver:
 
-    def __init__(self, c, groups=None):
+
+    moveComplements = {
+        'Y':'Yi',
+        'Yi':'Y',
+        'Y2':'Y2',
+        'Z':'Zi',
+        'Zi':'Z',
+        'Z2':'Z2',
+        'X':'Xi',
+        'Xi':'X',
+        'X2':'X2',
+
+        'D':'Di',
+        'Di':'D',
+        'D2':'D2',
+        'B':'Bi',
+        'Bi':'B',
+        'B2':'B2',
+        'F':'Fi',
+        'Fi':'F',
+        'F2':'F2',
+        'U':'Ui',
+        'Ui':'U',
+        'U2':'U2',
+        'L':'Li',
+        'Li':'L',
+        'L2':'L2',
+        'R':'Ri',
+        'Ri':'R',
+        'R2':'R2',
         
-        self.origionalCubeLabels = c.getLabels()
+        'M':'Mi',
+        'Mi':'M',
+        'M2':'M2',
+        'E':'Ei',
+        'Ei':'E',
+        'E2':'E2',
+        'S':'Si',
+        'Si':'S',
+        'S2':'S2'    
+    }
+    
+    def __init__(self, cube, groups=None):
         
-        c.orientToFront()
-        
-        self.cube = c
-        self.colors = c.colors()
-        self.stickers = c.stickers()
-        self.moves = []
+        self.origionalCubeLabels = cube.getLabels()
+        self.cube = cube
+
+        self.initCube(cube)
+
+        moves = cube.orientToFront()
+        self.moves = moves.split()
 
         self.left_piece  = self.cube.findPieceByDestinations('L')
         self.right_piece = self.cube.findPieceByDestinations('R')
@@ -32,36 +74,19 @@ class Solver:
         self.down_piece  = self.cube.findPieceByDestinations('D')
         
         if groups == None:
-            groups_str = "0" * 54  # everything is group "0"
+            groups = cube.getGroups()
+            if groups == None:
+                groups_str = "0" * 54  # everything is group "0"
+            else:
+                groups_str = "".join(x for x in groups if x not in string.whitespace)
         else:
             groups_str = "".join(x for x in groups if x not in string.whitespace)
-        
-        frontGroups = list()
-        for r in range(12, 15):
-            frontGroups += [groups_str[r]]
-        for r in range(24, 27):
-            frontGroups += [groups_str[r]]
-        for r in range(36, 39):
-            frontGroups += [groups_str[r]]
-        
-            
-        self.origionalFrontPieces = list()
-        groupIndex = 0
-        for y in range(-1,2):
-            for x in range(-1,2):
-                if x != 0 and y != 0:
-                    type = CORNER
-                    colors = ('W','W','W') # fake colors.  We don't care
-                elif x == 0 and y == 0:
-                    type = FACE
-                    colors = ('W', None, None) # fake colors.  We don't care
-                else:
-                    type = EDGE
-                    colors = ('W','W', None) # fake colors.  We don't care
-                self.origionalFrontPieces += [Piece(pos=Point(x,y,1), colors=colors, group=frontGroups[groupIndex])]
-                groupIndex += 1
 
+    def initCube(self, cube):
+        self.colors = cube.colors()
+        self.stickers = cube.stickers()
 
+                    
     def solve(self):
         if DEBUG: print(self.cube)
         self.cross()
@@ -79,25 +104,16 @@ class Solver:
         self.last_layer_edges()
         if DEBUG: print('---\nSolved. Cube looks like this:\n', self.cube)
 
+    def solveFront(self):
 
-    def generateCubeForMessage(self, message):
-        self.solveFrontString(message)
-        return cube.Cube(self.cube)
-        
-    def solveFrontString(self, frontString):
-        """
-        Solve the front layer such that the frontString string appears on that side of the cube.
-        Only the front palyer is solved since we don't really care how the rest of the cube looks
-        as long as the message shows up on the side we do care about.
-        
-        Keep the front string very short.  For instance 3 letters for a person's initials.
-        "-" represents a blank.  "?" is unknown.  Otherwise, any ASCII character is good.
-        
-        Careful thought needs to be put into the placement of stickers on a cube such that all possoible
-        strings can be solved without interfering with eachother.  If you hit a bad assert then you
-        probably need to redesign the sticker arrangement on the cube.
-        """
-                        
+        #print ("Cube before cross:\n", self.cube)
+        self.cross()
+        #print ("after cross: ", self.cube)
+        self.cross_corners()
+        #print ("after cross_corners: ", self.cube)
+
+
+    def generateCubeForMessage(self, frontString):
         # start fresh.  Destinations are assigned based on front string
         self.cube.clearAllDestinations()
         #self.cube.assignDefaultFaceDestinations()
@@ -113,7 +129,7 @@ class Solver:
 
             matched = False
 
-            for p in self.origionalFrontPieces:
+            for p in self.cube.origionalFrontPieces:
                 if p.group != groupch:
                     continue
                 
@@ -143,8 +159,21 @@ class Solver:
         m = message.replace("-", "")
         assert m == frontString.replace("-", "")
         
-        #print ("Cube before orient:\n", self.cube)
+        # Now assign the rest of the destinations however they might fall after solved
         
+        tmpCube = Cube(self.cube)
+        tSolver = Solver(tmpCube)
+        tSolver.cross()
+        tSolver.cross_corners()
+        tSolver.alignToMessageOrder()
+        #print (f" {frontString} Cube solved front:\n", tmpCube)
+        tmpCube.assignDefaultDestinations()
+        tSolver.undoAllMoves()
+        #print (f" {frontString} Cube origional orientation:\n", tmpCube)
+                
+        return tmpCube
+    
+        """ 
         # rotate the entire cube and, if needed, assign non-front destinations
         move_str = self.cube.orientToFront()
         if move_str != None and not move_str.isspace():
@@ -155,18 +184,40 @@ class Solver:
         self.right_piece = self.cube.findPieceByDestinations('R')
         self.up_piece    = self.cube.findPieceByDestinations('U')
         self.down_piece  = self.cube.findPieceByDestinations('D')
+        #self.solveFrontString(message)
+        return cube.Cube(self.cube)
+        """
+        
+    def solveFrontString(self, frontString):
+        """
+        Solve the front layer such that the frontString string appears on that side of the cube.
+        Only the front palyer is solved since we don't really care how the rest of the cube looks
+        as long as the message shows up on the side we do care about.
+        
+        Keep the front string very short.  For instance 3 letters for a person's initials.
+        "-" represents a blank.  "?" is unknown.  Otherwise, any ASCII character is good.
+        
+        Careful thought needs to be put into the placement of stickers on a cube such that all possoible
+        strings can be solved without interfering with eachother.  If you hit a bad assert then you
+        probably need to redesign the sticker arrangement on the cube.
+        """
+                        
+        tmpCube = self.generateCubeForMessage(frontString)
+        
+        self.initCube(tmpCube)
+
+        # assign the new destinations to our cube
+        self.cube.setDestinations(tmpCube)
 
         ##########################################
         # Setup complete. Now actually solve it!
         ##########################################
-
-        #print ("Cube before cross:\n", self.cube)
-
-        self.cross()
-        self.cross_corners()
-        #Done. Do not solve the middle slice and back layer.  There is no need.  Besides: destinations have not been assigned.
-        self.alignToMessageOrder()
-        #print ("after cross_corners: ", self.cube)
+        
+        tSolver = Solver(self.cube)
+        tSolver.solveFront()
+        tSolver.alignToMessageOrder()
+        self.moves = tSolver.moves
+        
         # Solved.  Verify and assert we got what we wanted
         message = ""
         FRONT = Point(0, 0, 1)
@@ -192,9 +243,29 @@ class Solver:
         
         assert goodOrientation
         
+    def getMovesString(self):
+        return  ' '.join(self.moves)
+
     def move(self, move_str):
         self.moves.extend(move_str.split())
         self.cube.sequence(move_str)
+
+    def undoLastMove(self):
+        """
+        perform complement most recent move.  Undo it.
+        """
+        lastMove = self.moves[-1]
+        undoMove = self.moveComplements[lastMove]
+        self.cube.sequence(undoMove)
+        self.moves = self.moves[:-1]
+    
+    def undoAllMoves(self):
+        """
+        perform complement move for every item in self.moves.  In reverse order.
+        """
+        
+        while len(self.moves) > 0:
+            self.undoLastMove()
 
     def cross(self):
         if DEBUG: print("cross..")
@@ -668,10 +739,10 @@ class Solver:
 
 if __name__ == '__main__':
     DEBUG = True
-    c = cube.Cube("DLURRDFFUBBLDDRBRBLDLRBFRUULFBDDUFBRBBRFUDFLUDLUULFLFR")
-    print("Solving:\n", c)
-    orig = cube.Cube(c)
-    solver = Solver(c)
+    cube = cube.Cube("DLURRDFFUBBLDDRBRBLDLRBFRUULFBDDUFBRBBRFUDFLUDLUULFLFR")
+    print("Solving:\n", cube)
+    orig = cube.Cube(cube)
+    solver = Solver(cube)
     solver.solve()
 
     print(f"{len(solver.moves)} moves: {' '.join(solver.moves)}")

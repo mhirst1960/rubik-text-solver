@@ -28,18 +28,6 @@ GGG WWW BBB YYY
 # group 5: AP- (in AM, PM or none)
 # group 6: M-  (in AM/PM or none)
 
-DELETE_CLOCK_CUBE_GROUPS = """
-    222
-    353
-    122
-231 122 232 222
-853 356 654 458
-443 344 444 454
-    344
-    454
-    454
-"""
-
 CLOCK_CUBE_GROUPS = """
     222
     244

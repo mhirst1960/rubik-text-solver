@@ -7,13 +7,15 @@ class Sticker:
         self.label = label
         self.group = group
 
-        if (destination == None):
-            self.setDefaultDestination(color) # direction based on color
-        else:
-            self.destination = destination # direction this points to when solved
+        #if (destination == None):
+        #    self.setDefaultDestination(color) # direction based on color
+        #else:
+        #    self.destination = destination # direction this points to when solved
+            
+        self.destination = destination
         
     # yellow on left, white on front, green on right, blue on back, orange on up, red on down side
-    destinations= {'Y':'L', 'W':'F', 'G':'R', 'B':'B', 'O':'U', 'R':'D'}
+    destinations= {'Y':'L', 'W':'F', 'G':'R', 'B':'B', 'O':'U', 'R':'D', None:'?'}
 
     def setDefaultDestination(self, color=None):
         if color == None:
@@ -46,7 +48,31 @@ class Sticker:
         else:
             return self.label
         
+    def stringDestinationColored(self):
+        colorModify=self.colorize(self.destination, self.destinadtionColorLookup) # color based on destination
+        return f"{colorModify}{Color.F_Black}{self.labelOrBlank()} {Color.B_Default}{Color.F_Default}"
+
+    def stringColored(self):
+        colorModify=self.colorize(self.color)  # actual colors
+        return f"{colorModify}{Color.F_Black}{self.labelOrBlank()} {Color.B_Default}{Color.F_Default}"
+
+    def stringLabelColor(self):
+        if self.color >= 'A' and self.color <= 'Z':
+            color = self.color.lower()
+        else:
+            color = self.color
+
+        return f"{self.label}{color}" # 1st character = label, second character = color
+
+    def stringUncolored(self):
+        return f"{self.label} " # no colors
+
     def __str__(self):
+        #return self.stringUncolored()
+        #return self.stringLabelColor()
+        return self.stringColored()
+        return self.stringDestinationColored()
+    
         #colorModify = ""
         colorModify=self.colorize(self.color)  # actual colors
         #colorModify=self.colorize(self.destination, self.destinadtionColorLookup) # color based on destination

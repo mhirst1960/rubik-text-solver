@@ -47,24 +47,29 @@ class Cube:
         self.corners = list()
 
         for p in c.faces:
-            pos, colors, labels, group, solvedFaces = p.getAttributes()
-            self.faces.append(Piece(pos=pos, colors=colors, labels=labels, group=group, solvedFaces=solvedFaces))
+            pos, colors, labels, group, destinations = p.getAttributes()
+            self.faces.append(Piece(pos=pos, colors=colors, labels=labels, group=group, destinations=destinations))
 
         for p in c.edges:
-            pos, colors, labels, group, solvedFaces = p.getAttributes()
-            self.edges.append(Piece(pos=pos, colors=colors, labels=labels, group=group, solvedFaces=solvedFaces))
+            pos, colors, labels, group, destinations = p.getAttributes()
+            self.edges.append(Piece(pos=pos, colors=colors, labels=labels, group=group, destinations=destinations))
 
         for p in c.corners:
-            pos, colors, labels, group, solvedFaces = p.getAttributes()
-            self.corners.append(Piece(pos=pos, colors=colors, labels=labels, group=group, solvedFaces=solvedFaces))
+            pos, colors, labels, group, destinations = p.getAttributes()
+            self.corners.append(Piece(pos=pos, colors=colors, labels=labels, group=group, destinations=destinations))
 
         self.pieces = self.faces + self.edges + self.corners
-
+        
+        assert c == self
+        
     def _assert_data(self):
         assert len(self.pieces) == 26
         assert all(p.type == FACE for p in self.faces)
         assert all(p.type == EDGE for p in self.edges)
         assert all(p.type == CORNER for p in self.corners)
+        for p  in self.pieces:
+            colors = p.getColors()
+            assert (colors[0] or '0') != (colors[1] or '1') != (colors[2] or '2') # all stickers on a piece must have different colors
 
     def _newPiece(self, pos, x, y, z):
         # create a new piece
@@ -107,7 +112,7 @@ class Cube:
         return p
 
         
-    def __init__(self, colors, labels=None, groups=None):
+    def __init__(self, colors, labels=None, groups=None, backViewIsXray=True):
         """
         cube_str looks like:
                 UUU                        0  1  2
@@ -122,11 +127,18 @@ class Cube:
         Note that the back side is mirrored in the horizontal axis during unfolding.
         So 18 (on the back) is directly under 12 (on the front)
         Each 'sticker' must be a single character.
+        
+        x: -1 = L <--
+           +1 = R -->
+        y: -1 = U ^
+           +1 = D v
+        z: -1 = B
+           +1 = F
         """
         
         # True: print Back stickers in same order as Front order. 1st stick is under 1st sticker
-        # False: print rotated 180 degrees, 1st sticker is under 3rd front sticker 
-        self.backViewIsXray = True
+        # False: print rotated 180 degrees, 1st sticker is under 3rd front sticker as if it is a unfolded piece of paper
+        self.backViewIsXray = backViewIsXray
                 
         if isinstance(colors, Cube):
             self._from_cube(colors)
@@ -161,33 +173,88 @@ class Cube:
             self._newPiece(FRONT, None, None, 25),
             self._newPiece(BACK, None, None, 31),
             )
-        self.edges = (
-            self._newPiece(RIGHT + UP,    16, 5, None),
-            self._newPiece(RIGHT + DOWN,  40, 50, None),
-            self._newPiece(RIGHT + FRONT, 27, None, 26),
-            self._newPiece(RIGHT + BACK,  29, None, 30),
-            self._newPiece(LEFT + UP,     10, 3, None),
-            self._newPiece(LEFT + DOWN,   34, 48, None),
-            self._newPiece(LEFT + FRONT,  23, None, 24),
-            self._newPiece(LEFT + BACK,   21, None, 32),
-            self._newPiece(UP + FRONT,    None, 7, 13),
-            self._newPiece(UP + BACK,     None, 1, 19),
-            self._newPiece(DOWN + FRONT,  None, 46, 37),
-            self._newPiece(DOWN + BACK,   None, 52, 43),
-        )
-        self.corners = (
-            self._newPiece(RIGHT + UP + FRONT,   15, 8, 14),
-            self._newPiece(RIGHT + UP + BACK,    17, 2, 18),
-            self._newPiece(RIGHT + DOWN + FRONT, 39, 47, 38),
-            self._newPiece(RIGHT + DOWN + BACK,  41, 53, 42),
-            self._newPiece(LEFT + UP + FRONT,    11, 6, 12),
-            self._newPiece(LEFT + UP + BACK,     9, 0, 20),
-            self._newPiece(LEFT + DOWN + FRONT,  35, 45, 36),
-            self._newPiece(LEFT + DOWN + BACK,   33, 51, 44),
-        )
+        
+        if self.backViewIsXray:
+            # left-back is initialized aligned to left-front
+            self.edges = (
+                self._newPiece(RIGHT + UP,    16, 5, None),
+                self._newPiece(RIGHT + DOWN,  40, 50, None),
+                self._newPiece(RIGHT + FRONT, 27, None, 26),
+                self._newPiece(RIGHT + BACK,  29, None, 32),
+                self._newPiece(LEFT + UP,     10, 3, None),
+                self._newPiece(LEFT + DOWN,   34, 48, None),
+                self._newPiece(LEFT + FRONT,  23, None, 24),
+                self._newPiece(LEFT + BACK,   21, None, 30),
+                self._newPiece(UP + FRONT,    None, 7, 13),
+                self._newPiece(UP + BACK,     None, 1, 19),
+                self._newPiece(DOWN + FRONT,  None, 46, 37),
+                self._newPiece(DOWN + BACK,   None, 52, 43),
+            )
+            self.corners = (
+                self._newPiece(RIGHT + UP + FRONT,    15,  8, 14),
+                self._newPiece(RIGHT + UP + BACK,     17,  2, 20),
+                self._newPiece(RIGHT + DOWN + FRONT,  39, 47, 38),
+                self._newPiece(RIGHT + DOWN + BACK,   41, 53, 44),
+                self._newPiece(LEFT + UP + FRONT,     11,  6, 12),
+                self._newPiece(LEFT + UP + BACK,       9,  0, 18),
+                self._newPiece(LEFT + DOWN + FRONT,   35, 45, 36),
+                self._newPiece(LEFT + DOWN + BACK,    33, 51, 42),
+            )
+        else:
+            # unfolded bottom view
+            # left-back is initialized aligned with right-front
+            self.edges = (
+                self._newPiece(RIGHT + UP,    16, 5, None),
+                self._newPiece(RIGHT + DOWN,  40, 50, None),
+                self._newPiece(RIGHT + FRONT, 27, None, 26),
+                self._newPiece(RIGHT + BACK,  29, None, 30),
+                self._newPiece(LEFT + UP,     10, 3, None),
+                self._newPiece(LEFT + DOWN,   34, 48, None),
+                self._newPiece(LEFT + FRONT,  23, None, 24),
+                self._newPiece(LEFT + BACK,   21, None, 32),
+                self._newPiece(UP + FRONT,    None, 7, 13),
+                self._newPiece(UP + BACK,     None, 1, 19),
+                self._newPiece(DOWN + FRONT,  None, 46, 37),
+                self._newPiece(DOWN + BACK,   None, 52, 43),
+            )
+            self.corners = (
+                self._newPiece(RIGHT + UP + FRONT,   15, 8, 14),
+                self._newPiece(RIGHT + UP + BACK,    17, 2, 18),
+                self._newPiece(RIGHT + DOWN + FRONT, 39, 47, 38),
+                self._newPiece(RIGHT + DOWN + BACK,  41, 53, 42),
+                self._newPiece(LEFT + UP + FRONT,    11, 6, 12),
+                self._newPiece(LEFT + UP + BACK,     9, 0, 20),
+                self._newPiece(LEFT + DOWN + FRONT,  35, 45, 36),
+                self._newPiece(LEFT + DOWN + BACK,   33, 51, 44),
+            )
+
 
         self.pieces = self.faces + self.edges + self.corners
 
+        frontGroups = list()
+        for r in range(12, 15):
+            frontGroups += [groups_str[r]]
+        for r in range(24, 27):
+            frontGroups += [groups_str[r]]
+        for r in range(36, 39):
+            frontGroups += [groups_str[r]]
+            
+        self.origionalFrontPieces = list()
+        groupIndex = 0
+        for y in range(-1,2):
+            for x in range(-1,2):
+                if x != 0 and y != 0:
+                    type = CORNER
+                    colors = ('W','W','W') # fake colors.  We don't care
+                elif x == 0 and y == 0:
+                    type = FACE
+                    colors = ('W', None, None) # fake colors.  We don't care
+                else:
+                    type = EDGE
+                    colors = ('W','W', None) # fake colors.  We don't care
+                self.origionalFrontPieces += [Piece(pos=Point(x,y,1), colors=colors, group=frontGroups[groupIndex])]
+                groupIndex += 1
+                
         self._assert_data()
         
         self.orientToFront()
@@ -205,7 +272,7 @@ class Cube:
                     check([piece.getDestinations()[0] for piece in self._face(LEFT)]) and
                     check([piece.getDestinations()[0] for piece in self._face(RIGHT)]))
         else:
-            # TODO: should check actual string on front face
+            # check actual string showing on front face
             solvedMessage = ""
             front = ''.join([p.getLabels()[2] for p in sorted(self._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))])
             solvedMessage = front.replace("-", "")
@@ -240,29 +307,53 @@ class Cube:
 
     # Rubik's Cube Notation: http://ruwix.com/the-rubiks-cube/notation/
     def L(self):  self._rotate_face(LEFT, rot.ROT_YZ_CC)
+    def L1(self): self.L()
     def Li(self): self._rotate_face(LEFT, rot.ROT_YZ_CW)
+    def L3(self): self.Li()
     def R(self):  self._rotate_face(RIGHT, rot.ROT_YZ_CW)
+    def R1(self): self.R()
     def Ri(self): self._rotate_face(RIGHT, rot.ROT_YZ_CC)
+    def R3(self): self.Ri()
     def U(self):  self._rotate_face(UP, rot.ROT_XZ_CW)
+    def U1(self): self.U()
     def Ui(self): self._rotate_face(UP, rot.ROT_XZ_CC)
+    def U3(self): self.Ui()
     def D(self):  self._rotate_face(DOWN, rot.ROT_XZ_CC)
+    def D1(self): self.D()
     def Di(self): self._rotate_face(DOWN, rot.ROT_XZ_CW)
+    def D3(self): self.Di()
     def F(self):  self._rotate_face(FRONT, rot.ROT_XY_CW)
+    def F1(self): self.F()
     def Fi(self): self._rotate_face(FRONT, rot.ROT_XY_CC)
+    def F3(self): self.Fi()
     def B(self):  self._rotate_face(BACK, rot.ROT_XY_CC)
+    def B1(self): self.B()
     def Bi(self): self._rotate_face(BACK, rot.ROT_XY_CW)
+    def B3(self): self.Bi()
     def M(self):  self._rotate_slice(Y_AXIS + Z_AXIS, rot.ROT_YZ_CC)
+    def M1(self): self.M()
     def Mi(self): self._rotate_slice(Y_AXIS + Z_AXIS, rot.ROT_YZ_CW)
+    def M3(self): self.Mi()
     def E(self):  self._rotate_slice(X_AXIS + Z_AXIS, rot.ROT_XZ_CC)
+    def E1(self): self.E()
     def Ei(self): self._rotate_slice(X_AXIS + Z_AXIS, rot.ROT_XZ_CW)
+    def E3(self): self.Ei()
     def S(self):  self._rotate_slice(X_AXIS + Y_AXIS, rot.ROT_XY_CW)
+    def S1(self): self.S()
     def Si(self): self._rotate_slice(X_AXIS + Y_AXIS, rot.ROT_XY_CC)
+    def S3(self): self.Si()
     def X(self):  self._rotate_pieces(self.pieces, rot.ROT_YZ_CW)
+    def X1(self): self.X()
     def Xi(self): self._rotate_pieces(self.pieces, rot.ROT_YZ_CC)
+    def X3(self): self.Xi()
     def Y(self):  self._rotate_pieces(self.pieces, rot.ROT_XZ_CW)
+    def Y1(self): self.Y()
     def Yi(self): self._rotate_pieces(self.pieces, rot.ROT_XZ_CC)
+    def Y3(self): self.Yi()
     def Z(self):  self._rotate_pieces(self.pieces, rot.ROT_XY_CW)
+    def Z1(self): self.Z()
     def Zi(self): self._rotate_pieces(self.pieces, rot.ROT_XY_CC)
+    def Z3(self): self.Zi()
     def X2(self): self.X(); self.X()
     def Y2(self): self.Y(); self.Y()
     def Z2(self): self.Z(); self.Z()
@@ -284,13 +375,16 @@ class Cube:
         for move in moves:
             move()
 
-    def findPieceByColors(self, *colors):
-        if None in colors:
+    def findPieceByColors(self, colors):
+        if colors.count(None) == 3:
             return
+        assert (colors[0] or '0') != (colors[1] or '1') != (colors[2] or '2') # all stickers on a piece must have different colors
+        
         for p in self.pieces:
-            if p.colors.count(None) == 3 - len(colors) \
-                and all(c in p.colors for c in colors):
+            pColors = p.getColors()
+            if sorted(pColors, key=lambda x: x if isinstance(x, str) else "") == sorted(colors,key=lambda x: x if isinstance(x, str) else ""):
                 return p
+        assert False
 
     # find a piece based on the intended solved orientation directions
     def findPieceByDestinations(self, *destinations):
@@ -322,32 +416,63 @@ class Cube:
         for p in self.pieces:
             p.clearDestinations()
             
+    def setDestinations(self, cube):
+        for piece in self.pieces:
+            cubePiece = cube.get_piece(piece.pos)
+            piece.setDestinations(cubePiece)
+            
     def assignDefaultFaceDestinations(self):
         for face in self.faces:
             face.assignDefaultDestinations()
         
+    def assignDefaultDestinations(self):
+        """
+        Assume this is a solved cube so destinations are in place.  Assign based on that
+        """
+        for p in self.pieces:
+            p.setDestinationsFromPos()
+                    
     def assignClearedDestinations(self):
         """
         find all pieces with no destination and assign a good default value
         based on destinations already assigned
         """
         
+        assigned = list()
+        unassigned = list()
+        
+        # initialize two lists: one with pieces that already have a destination assigned, and one with pieces with no destination
         for p in self.pieces:
-            if p.getDestinations() != [None, None, None]:
-                continue
-            
-            
-        assert false #TODO implement
+            if p.getDestinations() == [None, None, None]:
+                unassigned += [p]
+            else:
+                assigned += [p]
+
+        for i, pu in enumerate(unassigned):
+            for p in self.pieces:
+                if p.type == pu.type:
+                    maybeDestinations = p.getSolvedFacesFromPostions()
+                    if maybeDestinations not in assigned:
+                        pu.setDestinations(p)
+                        assigned += [pu]
+                        unassigned.pop(i)
+                        break
+        
+        print ("alldestinations should be assigned: ", self)    
+        assert len(unassigned) == 0
             
     def getFrontPieces(self):
         front = [p for p in sorted(self._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))]
         return front
-        
-    def get_piece(self, x, y, z):
+
+    def get_piece(self, x, y=None, z=None):
         """
         :return: the Piece at the given Point
         """
-        point = Point(x, y, z)
+        if isinstance(x, Point):
+            point = x
+        else:
+            point = Point(x, y, z)
         for p in self.pieces:
             if p.pos == point:
                 return p
@@ -536,6 +661,29 @@ class Cube:
     def getColors(self):
         return self.colorList()
     
+    def getFrontString(self):
+        front = ''.join([p.getLabels()[2] for p in sorted(self._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))])
+        message = front.replace("-", "")
+        return message
+        
+    def assignSecondaryAttributes(self, cube):
+        """
+        Assuming colors and positions are correct for all pieces, assign new values from cube passed in.
+        Assign labels and groups to self from argument
+        """
+        
+        for piece in cube.pieces:
+            pColors = piece.getColors()
+            p = self.findPieceByColors(pColors)
+            p.assignSecondaryAttributes(piece)
+            
+        self.origionalFrontPieces = list()
+
+        # These special pieces contain group information for front solved positions
+        for piece in cube.origionalFrontPieces:
+            self.origionalFrontPieces += [Piece(pos=piece.pos, colors=piece.colors, group=piece.group)]
+            
+    
     def colorString(self):
         return "".join(x for x in self.colorList() if x not in string.whitespace)
 
@@ -607,6 +755,24 @@ class Cube:
         else:
             return ''
 
+    def _destination_list(self):
+        right = [p.getDestinationsNotNone()[0] for p in sorted(self._face(RIGHT), key=lambda p: (-p.pos.y, -p.pos.z))]
+        left  = [p.getDestinationsNotNone()[0] for p in sorted(self._face(LEFT),  key=lambda p: (-p.pos.y, p.pos.z))]
+        up    = [p.getDestinationsNotNone()[1] for p in sorted(self._face(UP),    key=lambda p: (p.pos.z, p.pos.x))]
+        down  = [p.getDestinationsNotNone()[1] for p in sorted(self._face(DOWN),  key=lambda p: (-p.pos.z, p.pos.x))]
+        front = [p.getDestinationsNotNone()[2] for p in sorted(self._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))]
+        if self.backViewIsXray:
+            back  = [p.getDestinationsNotNone()[2] for p in sorted(self._face(BACK),  key=lambda p: (-p.pos.y, p.pos.x))]
+        else:
+            back  = [p.getDestinationsNotNone()[2] for p in sorted(self._face(BACK),  key=lambda p: (-p.pos.y, -p.pos.x))]
+
+        return (up + left[0:3] + front[0:3] + right[0:3] + back[0:3]
+                   + left[3:6] + front[3:6] + right[3:6] + back[3:6]
+                   + left[6:9] + front[6:9] + right[6:9] + back[6:9] + down)
+        
+    def getDestinationString(self):
+        return ''.join(self._destination_list())
+        
     def _label_list(self):
         right = [p.getLabels()[0] for p in sorted(self._face(RIGHT), key=lambda p: (-p.pos.y, -p.pos.z))]
         left  = [p.getLabels()[0] for p in sorted(self._face(LEFT),  key=lambda p: (-p.pos.y, p.pos.z))]
@@ -640,7 +806,7 @@ class Cube:
                     "       {}{}{}\n"
                     "       {}{}{}")
 
-        return                ''.join(self._label_list()) + "\n       " + template.format(*self._sticker_list()).strip()
+        return                "\n" + ''.join(self._label_list()) + "\n" + ''.join(self._destination_list()) + "\n       " + template.format(*self._sticker_list()).strip()
         #return                template.format(*self._sticker_list()).strip()
 
 
