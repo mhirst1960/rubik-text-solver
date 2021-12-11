@@ -94,7 +94,21 @@ TMW_PEOPLE = [
 
 ]
 
+def getColorString(destinationsString):
+    # if string is cube state not colors, convert to colors
+    allowed = set('UDFBLR')
+    if set(destinationsString) <= allowed:
+        tbl = {'U':'O','D':'R','F':'W','B':'Y','L':'G','R':'B'}
+        l = list(destinationsString)
+        for i,d in enumerate(l):
+            l[i] = tbl[l[i]]
+        destinationsString = ''.join(l)
+    return destinationsString
+        
 def run():
+    
+    global inputColors
+    
     if DEBUG > 0:
         print ("tmwrubik")
         print ("verbose:     ", DEBUG)
@@ -102,10 +116,18 @@ def run():
         print ("Input order: ", inputOrder)
         print ("Index:       ", "          11111111112222222222333333333344444444445555")
         print ("Index:       ", "012345678901234567890123456789012345678901234567890123")
-        print ("Input:       ", inputColors)
+        if inputColors is not None:
+            print ("Input:       ", inputColors)
         print ("Output type: ", outputStyle)
         print ("Will output: ", outputDataType)
 
+    if inputFile != None:
+        f = open(inputFile, "r")
+        inputColors = f.read()
+        f.close()
+        inputColors = inputColors.rstrip()
+        assert len(inputColors) == 54
+    
     referenceCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_XRAY, TMW_CUBE_GROUPS)
     if DEBUG > 1: print (f"Initial reference cube: \n", referenceCube)
 
@@ -115,6 +137,7 @@ def run():
     elif inputOrder == 'unfold':
         xrayColors = co.convert(inputColors, co.SLICE_UNFOLD_BACK, co.SLICE_XRAYBACK)
     elif inputOrder == 'kociemba':
+        #xrayColors = co.convert(inputColors, co.COLOR_RESOLVER_ORDER, co.SLICE_XRAYBACK)
         xrayColors = co.convert(inputColors, co.KOCIEMBA_ORDER, co.SLICE_XRAYBACK)
     else:
         xrayColors = None
@@ -125,24 +148,61 @@ def run():
     if DEBUG > 1: print ("fold input:      ", unfoldColors)
     if DEBUG > 1: print ("kociemba input:  ", kociembaColors)
 
+    # if string is cube state not colors, convert to colors
+    xrayColors = getColorString(xrayColors)
+            
     #cube.setDestinationsToColors(xrayColors)
     cCube = Cube(xrayColors)
 
     cCube.assignSecondaryAttributes(referenceCube)
+    cubeSolver = Solver(cCube)
+    personCube = cubeSolver.generateCubeForMessage(person)
+    xDestinations = personCube.getDestinationString()
+    kDestinations = co.convert(xDestinations, co.SLICE_XRAYBACK, co.KOCIEMBA_ORDER)
+    xColors = personCube.colorString()
+    kColors = co.convert(xColors, co.SLICE_XRAYBACK, co.KOCIEMBA_ORDER)
+    aColors = co.convert(xColors, co.SLICE_XRAYBACK, co.SLICE_ANIMJS3)
 
+    if DEBUG > 1:
+        print (f"{person} personCube before solve: \n", personCube)
+        print (f"xray colors:     {xColors}")
+        print (f"Kociemba colors: {kColors}")
+        print (f"Anim colors:     {aColors}")
+        
     if outputDataType == 'colors' or outputDataType == 'frontstring' or outputDataType == 'moves':
         if DEBUG > 1: print (f"cube before solve: \n", cCube)
         solver = Solver(cCube)
+        #personCube = solver.generateCubeForMessage(person)
         solver.solveFrontString(person)
+        moves = solver.moves
+        if moveNotation == "singmaster":
+            for i, move in enumerate(moves):
+                move = move.replace("i", "'")
+                moves[i] = move
+        elif moveNotation == "programmer":
+            for i, move in enumerate(moves):
+                move = move.replace("'", "i")
+                moves[i] = move
         if DEBUG > 1: print (f"Solved Cube: \n", cCube)
-        if DEBUG > 1: print (f"Solved moves: \n", solver.moves)
+        if DEBUG > 1: print (f"Solved Moves: \n", moves)
     
+    destinations = personCube.getDestinationString()
+    kociembaDestinations = co.convert(destinations, co.SLICE_XRAYBACK, co.KOCIEMBA_ORDER)
+    xrayColors = getColorString(destinations)
+    kociembaColors = getColorString(kociembaDestinations)
+
     if DEBUG > 0:
-        print (f"---------------------------------")
+        print (f"-----------Debug----------------------")
         print (f"tmwrubik output:")
+        print (f"xray Destinations:     {destinations}")
+        print (f"Xray Colors:           {xrayColors}")
+        print (f"Kociemba Destinations: {kociembaDestinations}")
+        print (f"Kociemba Colors:       {kociembaColors}")
+        print (f"Message:               {cCube.getFrontString()}")
+        print (f"Moves:                 {solver.getMovesString()}")
+        print ("---------------------------------------")
+
     if outputDataType == "destinations":
-        destinations = cCube.getDestinationString()
-        kociembaDestinations = co.convert(destinations, co.SLICE_XRAYBACK, co.KOCIEMBA_ORDER)
         print (f"{kociembaDestinations}")
     elif outputDataType == "colors":
         print (f"{cCube.colorString()}")
@@ -151,9 +211,9 @@ def run():
     elif outputDataType == 'moves':
         print (f"{solver.getMovesString()}")
         
-    #subprocess.run(["python3",
-    #                "/Users/michaelhirst/TMW/rubik/hkociemba/RubiksCube-TwophaseSolver/main.py",
-    #                kociembaDestinations])
+    subprocess.run(["python3",
+                    "/Users/michaelhirst/TMW/rubik/hkociemba/RubiksCube-TwophaseSolver/main.py",
+                    kDestinations])
 
 if __name__ == '__main__':
     DEBUG = 0
@@ -165,12 +225,16 @@ if __name__ == '__main__':
     parser.add_argument("--person", default='TMW', help="initials for person to solve for")
     parser.add_argument("--inputorder", default='xray', help="Color input from camera or color string order: back=front, onfolded paper cube, or orbital kociemba", \
                             choices=['xray', 'unfold', 'kociemba', 'camera'])
+    parser.add_argument("--infile", \
+        help="File contains one line list of colors: OGYWBR and order depends on --inputorder: back=front, onfolded paper cube, or orbital kociemba")
     parser.add_argument("--input", default='OOOOOOOOOGGGWWWBBBYYYGGGWWWBBBYYYGGGWWWBBBYYYRRRRRRRRR', \
-        help="Input string is list of colors: OGYWBR and order depends on --inputorder: back=front, onfolded paper cube, or orbital kociemba")
+        help='values for input are: "camera", "file", or list of colors: OGYWBR and order depends on --inputorder: back=front, onfolded paper cube, or orbital kociemba')
     parser.add_argument("--output", default='moves', help="robot solve, or print planned moves, or print destination order: back=front, onfolded paper cube, or orbital kociemba", \
                             choices=['xray', 'unfold', 'kociemba', 'robot', 'moves'])
     parser.add_argument("--outputdatatype", default='destinations', help="how should we print output (No output = None)", \
                             choices=['destinations', 'colors', 'frontstring', 'moves', 'None'])
+    parser.add_argument("--movenotation", default='singmaster', help="primmaster uses prime like X', programmer uses i like Xi", \
+                            choices=['singmaster', 'programmer'])
     
     parser.add_argument('--robot', dest='robot', action='store_true', help="Allow robot to move (default: --no-robot)")
     parser.add_argument('--no-robot', dest='robot', action='store_false', help="Do not allow robot to move (default: --no-robot)")
@@ -180,7 +244,7 @@ if __name__ == '__main__':
     parser.add_argument('--no-camera', dest='camera', action='store_false', help="Do not use the camera (default: --no-camera)")
     parser.set_defaults(camera=False)
 
-
+    
     args = parser.parse_args()
     
     if args.verbose:
@@ -191,6 +255,10 @@ if __name__ == '__main__':
     useCamera = args.camera
     inputOrder = args.inputorder
     outputDataType = args.outputdatatype
+    moveNotation = args.movenotation
+
+    inputFile = None
+    inputColors = None
 
     if args.input == 'camera':
         if useCamera == False:
@@ -203,6 +271,13 @@ if __name__ == '__main__':
             exit(-1)
         getInputFromCamera = True
         inputColors = None
+    elif args.input == 'file':
+        if not args.infile:
+            print ("ERROR: input file not specified")
+            parser.print_help()
+            exit(-1)
+        inputColors=None
+        inputFile=args.infile
     else:
         getInputFromCamera = False
         inputColors = args.input

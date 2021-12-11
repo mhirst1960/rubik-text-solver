@@ -1,12 +1,15 @@
 from rubik.Color import Color
-
-
+from rubik.CubePrintStyles import CubePrintStyles
 class Sticker:
+    
+
     def __init__(self, color, label, group, destination=None):
         self.color = color
         self.label = label
         self.group = group
 
+        self.printStyle = CubePrintStyles.Colored
+        
         #if (destination == None):
         #    self.setDefaultDestination(color) # direction based on color
         #else:
@@ -16,6 +19,10 @@ class Sticker:
         
     # yellow on left, white on front, green on right, blue on back, orange on up, red on down side
     destinations= {'Y':'L', 'W':'F', 'G':'R', 'B':'B', 'O':'U', 'R':'D', None:'?'}
+
+    def setPrintStyle(self, printStyle):
+        assert isinstance(printStyle, CubePrintStyles)
+        self.printStyle = printStyle
 
     def setDefaultDestination(self, color=None):
         if color == None:
@@ -52,6 +59,10 @@ class Sticker:
         colorModify=self.colorize(self.destination, self.destinadtionColorLookup) # color based on destination
         return f"{colorModify}{Color.F_Black}{self.labelOrBlank()} {Color.B_Default}{Color.F_Default}"
 
+    def stringDestinationGroupColored(self):
+        colorModify=self.colorize(self.destination, self.destinadtionColorLookup) # color based on destination
+        return f"{colorModify}{Color.F_Black}{self.labelOrBlank()}{self.group}{Color.B_Default}{Color.F_Default}"
+
     def stringColored(self):
         colorModify=self.colorize(self.color)  # actual colors
         return f"{colorModify}{Color.F_Black}{self.labelOrBlank()} {Color.B_Default}{Color.F_Default}"
@@ -68,10 +79,19 @@ class Sticker:
         return f"{self.label} " # no colors
 
     def __str__(self):
-        #return self.stringUncolored()
-        #return self.stringLabelColor()
-        return self.stringColored()
-        return self.stringDestinationColored()
+        
+        if self.printStyle == CubePrintStyles.Uncolored:
+            return self.stringUncolored()
+        elif self.printStyle == CubePrintStyles.Colored:
+            return self.stringColored()
+        elif self.printStyle == CubePrintStyles.LabelColor:
+            return self.stringLabelColor()
+        elif self.printStyle == CubePrintStyles.DestinationColored:
+            return self.stringDestinationColored()
+        elif self.printStyle == CubePrintStyles.DestinationGroupColored:
+            return self.stringDestinationGroupColored()
+        else:
+            return self.stringLabelColor()
     
         #colorModify = ""
         colorModify=self.colorize(self.color)  # actual colors

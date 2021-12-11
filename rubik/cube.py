@@ -4,6 +4,7 @@ import textwrap
 import rubik.Rotations as rot
 from rubik.maths import Point, Matrix
 from rubik.Piece import Piece
+from rubik.CubePrintStyles import CubePrintStyles
 
 RIGHT = X_AXIS = Point(1, 0, 0)
 LEFT           = Point(-1, 0, 0)
@@ -61,7 +62,7 @@ class Cube:
         self.pieces = self.faces + self.edges + self.corners
         
         assert c == self
-        
+          
     def _assert_data(self):
         assert len(self.pieces) == 26
         assert all(p.type == FACE for p in self.faces)
@@ -112,7 +113,7 @@ class Cube:
         return p
 
         
-    def __init__(self, colors, labels=None, groups=None, backViewIsXray=True):
+    def __init__(self, colors, labels=None, groups=None, backViewIsXray=False):
         """
         cube_str looks like:
                 UUU                        0  1  2
@@ -124,14 +125,20 @@ class Cube:
                 DDD                       45 46 47
                 DDD                       48 49 50
                 DDD                       51 52 53
-        Note that the back side is mirrored in the horizontal axis during unfolding.
-        So 18 (on the back) is directly under 12 (on the front)
-        Each 'sticker' must be a single character.
+        Note by default the back side is "unfolded" as if flattening a paper cube.
+        So, by default these are in the same piece: 17,18 29,30  41,42
+        
+        If parameter backViewIsXray is set to True then back is same order as front
+        as if viewing from the front xray through the cube
+        So 18 (on the back) is directly under 12 (on the front).
+        If that is the case these are in the same piece: 17,20 29,32 41,44
+        
+        Each 'sticker' must be a single character or '-' for no label
         
         x: -1 = L <--
            +1 = R -->
-        y: -1 = U ^
-           +1 = D v
+        y: -1 = D v
+           +1 = U ^
         z: -1 = B
            +1 = F
         """
@@ -230,6 +237,8 @@ class Cube:
 
 
         self.pieces = self.faces + self.edges + self.corners
+
+        self.setPrintStyle(CubePrintStyles.Colored)
 
         frontGroups = list()
         for r in range(12, 15):
@@ -398,7 +407,13 @@ class Cube:
 
     # find a piece based on the intended solved orientation directions
     def findPieceByLabelAndGroupWithNoDestination(self, label, group, type=None):
-        for p in self.pieces:
+        
+        #give preference to front face in the origional order
+        # TODO there are duplicates in the list
+        pieces = sorted(self._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))
+        pieces += self.pieces
+        
+        for p in pieces:
             if p.group != group:
                 continue
             if type!=p.type and type != None:
@@ -525,6 +540,13 @@ class Cube:
     def downDestination(self): return self.downSticker().destination
     def frontDestination(self): return self.frontSticker().destination
     def backDestination(self): return self.backSticker().destination
+
+    def leftFaceGroup(self): return self.leftSticker().group
+    def rightFaceGroup(self): return self.rightSticker().group
+    def upFaceGroup(self): return self.upSticker().group
+    def downFaceGroup(self): return self.downSticker().group
+    def frontFaceGroup(self): return self.frontSticker().group
+    def backFaceGroup(self): return self.backSticker().group
 
     #orient entire cube so front destination is in front and up is up
     def orientToFront(self):
@@ -788,6 +810,13 @@ class Cube:
                    + left[3:6] + front[3:6] + right[3:6] + back[3:6]
                    + left[6:9] + front[6:9] + right[6:9] + back[6:9] + down)
         
+    
+    def setPrintStyle(self, printStyle):
+        assert isinstance(printStyle, CubePrintStyles)
+        self.printStyle = printStyle
+        for p in self.pieces:
+            p.setPrintStyle(printStyle)
+
     def flat_str(self):
         return ''.join(self._label_list())
         #return "".join(x for x in str(self) if x not in string.whitespace)
@@ -806,7 +835,7 @@ class Cube:
                     "       {}{}{}\n"
                     "       {}{}{}")
 
-        return                "\n" + ''.join(self._label_list()) + "\n" + ''.join(self._destination_list()) + "\n       " + template.format(*self._sticker_list()).strip()
+        return                "\n" + ''.join(self._label_list()) + "\n" + ''.join(self._destination_list()) + "\n" + ''.join(self._group_list()) + "\n       " + template.format(*self._sticker_list()).strip()
         #return                template.format(*self._sticker_list()).strip()
 
 

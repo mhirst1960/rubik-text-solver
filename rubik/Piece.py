@@ -4,6 +4,7 @@ import textwrap
 from rubik.Sticker import Sticker
 import rubik.Rotations
 from rubik.maths import Point
+from rubik.CubePrintStyles import CubePrintStyles
 
 FACE = 'face'
 EDGE = 'edge'
@@ -82,6 +83,8 @@ class Piece:
             else:
                 self.stickers = self.stickers + [sticker]
 
+        self.setPrintStyle(CubePrintStyles.Colored)
+
         self._set_piece_type()
 
     def getAttributes(self):        
@@ -158,6 +161,13 @@ class Piece:
         stickers = "".join(s.stringUncolored() for s in self.stickers if s is not None)
         return f"({stickers})"
     
+    def setPrintStyle(self, printStyle):
+        assert isinstance(printStyle, CubePrintStyles)
+        self.printStyle = printStyle
+        for s in self.stickers:
+            if s is not None:
+                s.setPrintStyle(printStyle)
+
     def __str__(self):
         return self.stringUncolored()
         return self.stringColored()
@@ -267,6 +277,9 @@ class Piece:
 
         return destinations
  
+    def setDestination(self, index, destination):
+        self.stickers[index].destination = destination
+                
     def setDestinations(self, piece):
         for s in self.stickers:
             if s != None:
