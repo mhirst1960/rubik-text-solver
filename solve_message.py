@@ -4,6 +4,8 @@ import random
 import time
 import re
 import subprocess
+import os
+from pathlib import Path
 
 from rubik import solve
 from rubik.cube import Cube
@@ -482,10 +484,15 @@ def run():
                 print(f"{person} robot moves:   {' '.join(robotMoves)}\n")
                 #TODO kociemba uses fewer moves but is not quite working.  someday use this
                 subtitle = f"Cube for {person}"
-                html = CubeWebpage("/Users/michaelhirst/TMW/rubik/cubeviewer",
-                                   cubeColors=unsolvedCubeState,
-                                   cubeMoves=robotMoves,
-                                   subTitle=subtitle)
+                home = str(Path.home())
+                htmlPath = home + "/cubeviewer"
+                if not os.path.exists(htmlPath):
+                    os.mkdir(htmlPath)
+                html = CubeWebpage(htmlPath,
+                                    cubeColors=unsolvedCubeString,
+                                    cubeState=unsolvedCubeState,
+                                    cubeMoves=robotMoves,
+                                    subTitle=subtitle)
                 html.generateHTML()
                 
                 print("------------------------------------")

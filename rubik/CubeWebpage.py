@@ -27,8 +27,8 @@ The parameter htmlDir (--htmldir <directory>) should point to the same place tha
 3x3x3-AnimCubeJS.zip is unzipped to.
 
 Installation example:
-  cd /home/pi/cubeviewer
-  unzip 3x3x3-AnimCubeJS.zip
+    cd /home/pi/cubeviewer
+    unzip 3x3x3-AnimCubeJS.zip
     
 """
 
@@ -93,11 +93,37 @@ class CubeWebpage:
     </html>
     """
 
+    HTML_ERROR_TEMPLATE = """
+        <div style="width:400px; height:400px; float: left">
+         ERROR: file not found: {animjsFile} <br>
+please download 3x3x3-AnimCubeJS.zip from <a href="https://cubing.github.io/AnimCubeJS/animcubejs.html#download">cubing.github.io/AnimCubeJS</a>  <br>
+and install like this: <br>
+    cd {htmlDir}<br>
+    unzip 3x3x3-AnimCubeJS.zip<br>
+        </div>
+            """
+            
     def __init__(self, htmlDir, htmlFile='index.html', cubeColors=None, cubeState=None, cubeMoves='', title='Cube Viewer', subTitle=''):
         
+
         self.htmlDir = htmlDir
         self.htmlFile = htmlFile
         
+        self.animjsFile = htmlDir + "/AnimCube3.js"
+        if not os.path.exists(self.animjsFile):
+            errorText = f"""
+<br> <br>
+ERROR: file not found: {self.animjsFile} <br>
+please download 3x3x3-AnimCubeJS.zip from https://cubing.github.io/AnimCubeJS/animcubejs.html#download <br>
+and install like this:
+    cd {htmlDir}
+    unzip 3x3x3-AnimCubeJS.zip
+            """
+            print (errorText)
+            self.animjsInstalled = False
+        else:
+            self.animjsInstalled = True
+
         if isinstance(cubeMoves, list):
             self.cubeMoves = ''.join(cubeMoves)
         else:
@@ -136,6 +162,9 @@ class CubeWebpage:
 
 
     def generateHTML(self):
+        
+        
+        
         indexHtml = self.htmlDir + "/" + self.htmlFile
         configFile = self.htmlDir + "/AnimCube3.cfg"
         pythonScriptDir = os.path.dirname(os.path.realpath(__file__))
@@ -155,12 +184,16 @@ class CubeWebpage:
         f = open(configFile, "w")
         f.write(self.config)
         f.close()
-        
-        html = self.HTML_PAGE_PREFIX_TEMPLATE.format(title=self.title, subtitle=self.subTitle, moves=animMoves)
-        html += self.HTML_CUBE_TEMPLATE.format(info="Cube Colors", colors=animColors, moves=animMoves)
-        
-        if animStateColors != None:
-            html += self.HTML_CUBE_TEMPLATE.format(info="Cube State", colors=animStateColors, moves=animMoves)
+        if not self.animjsInstalled:
+            print ("ERROR CubeWebpage is not installed")
+            html = self.HTML_PAGE_PREFIX_TEMPLATE.format(title=self.title, subtitle=self.subTitle, moves=animMoves)
+            html += self.HTML_ERROR_TEMPLATE.format(animjsFile=self.animjsFile, htmlDir=self.htmlDir)
+        else:  
+            html = self.HTML_PAGE_PREFIX_TEMPLATE.format(title=self.title, subtitle=self.subTitle, moves=animMoves)
+            html += self.HTML_CUBE_TEMPLATE.format(info="Cube Colors", colors=animColors, moves=animMoves)
+            
+            if animStateColors != None:
+                html += self.HTML_CUBE_TEMPLATE.format(info="Cube State", colors=animStateColors, moves=animMoves)
                                                    
         html += self.HTML_PAGE_SUFFIX_TEMPLATE
         
