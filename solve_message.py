@@ -455,6 +455,7 @@ def run():
                 print ("moves: ", peopleSolver.getMovesString())
                 print (f"{person} solved cube = ", personCube)
                 
+                doKociembaOptimization = False
                 if doKociembaOptimization:
                     #kociemba requires server to be running
                     # cd .../RubiksCube-TwophaseSolver

@@ -162,9 +162,15 @@ class Solver:
         groupch = chr(ord('0') + group)
         count = 0
         for labelChar in frontString:
-            labeledPiece = self.cube.findPieceByLabelAndGroupWithNoDestination(labelChar, groupch)
+            
+            if groupch == middleGroup and middlePiece.getLabel(2) == labelChar:
+                labeledPiece = middlePiece
+                matched = True
+            else:
+                labeledPiece = self.cube.findPieceByLabelAndGroupWithNoDestination(labelChar, groupch)
+                matched = False
 
-            matched = False
+            #matched = False
 
             if groupch == middleGroup and labeledPiece == None:
                 labeledPiece = middlePiece
@@ -494,9 +500,6 @@ class Solver:
     def placeFrEdgeLabel(self, edgePiece, label):
         # move the corner piece that has this label into position front-right-down
         #  such that the label is oriented to the front
-        
-        if label == 'Z':
-            print ("Z breakpoint here")
 
         if (edgePiece.pos == RIGHT + FRONT):
             if edgePiece.getLabel(2) == label:
