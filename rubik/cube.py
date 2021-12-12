@@ -240,29 +240,30 @@ class Cube:
 
         self.setPrintStyle(CubePrintStyles.Colored)
 
-        frontGroups = list()
+        self.frontGroups = list()
         for r in range(12, 15):
-            frontGroups += [groups_str[r]]
+            self.frontGroups += [groups_str[r]]
         for r in range(24, 27):
-            frontGroups += [groups_str[r]]
+            self.frontGroups += [groups_str[r]]
         for r in range(36, 39):
-            frontGroups += [groups_str[r]]
+            self.frontGroups += [groups_str[r]]
             
-        self.origionalFrontPieces = list()
-        groupIndex = 0
-        for y in range(-1,2):
-            for x in range(-1,2):
-                if x != 0 and y != 0:
-                    type = CORNER
-                    colors = ('W','W','W') # fake colors.  We don't care
-                elif x == 0 and y == 0:
-                    type = FACE
-                    colors = ('W', None, None) # fake colors.  We don't care
-                else:
-                    type = EDGE
-                    colors = ('W','W', None) # fake colors.  We don't care
-                self.origionalFrontPieces += [Piece(pos=Point(x,y,1), colors=colors, group=frontGroups[groupIndex])]
-                groupIndex += 1
+        if False:  # TODO delete unused origionalFrontPieces
+            self.origionalFrontPieces = list()
+            groupIndex = 0
+            for y in range(-1,2):
+                for x in range(-1,2):
+                    if x != 0 and y != 0:
+                        type = CORNER
+                        colors = ('W','W','W') # fake colors.  We don't care
+                    elif x == 0 and y == 0:
+                        type = FACE
+                        colors = ('W', None, None) # fake colors.  We don't care
+                    else:
+                        type = EDGE
+                        colors = ('W','W', None) # fake colors.  We don't care
+                    self.origionalFrontPieces += [Piece(pos=Point(x,y,1), colors=colors, group=self.frontGroups[groupIndex])]
+                    groupIndex += 1
                 
         self._assert_data()
         
@@ -699,11 +700,14 @@ class Cube:
             p = self.findPieceByColors(pColors)
             p.assignSecondaryAttributes(piece)
             
-        self.origionalFrontPieces = list()
+        self.frontGroups = cube.frontGroups
+        
+        if False:  # TODO delete unused origionalFrontPieces
+            self.origionalFrontPieces = list()
 
-        # These special pieces contain group information for front solved positions
-        for piece in cube.origionalFrontPieces:
-            self.origionalFrontPieces += [Piece(pos=piece.pos, colors=piece.colors, group=piece.group)]
+            # These special pieces contain group information for front solved positions
+            for piece in cube.origionalFrontPieces:
+                self.origionalFrontPieces += [Piece(pos=piece.pos, colors=piece.colors, group=piece.group)]
             
     
     def colorString(self):
@@ -795,6 +799,15 @@ class Cube:
     def getDestinationString(self):
         return ''.join(self._destination_list())
         
+    def getDestinationColorString(self):
+        destinationConvert= {'L':'Y', 'F':'W', 'R':'G', 'B':'B', 'U':'O', 'D':'R', None:'D'}
+        destinations = self._destination_list()
+        colors = list()
+        for d in destinations:
+            colors += [destinationConvert[d]]
+        colorString = ''.join(colors)
+        return colorString
+
     def _label_list(self):
         right = [p.getLabels()[0] for p in sorted(self._face(RIGHT), key=lambda p: (-p.pos.y, -p.pos.z))]
         left  = [p.getLabels()[0] for p in sorted(self._face(LEFT),  key=lambda p: (-p.pos.y, p.pos.z))]

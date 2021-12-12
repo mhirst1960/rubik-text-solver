@@ -71,6 +71,8 @@ class Solver:
 
         self.initCube(cube)
 
+        self.debugShowCubeAfterEveryMove = False
+        
         moves = cube.orientToFront()
         self.moves = moves.split()
 
@@ -120,8 +122,10 @@ class Solver:
         self.cube.clearAllDestinations()
         
         frontPiecesCopy = list()
-        for p in sorted(self.cube._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x)):
-            frontPiecesCopy += [Piece(p.pos, p.getColors(), p.getLabels(), p.group, p.getDestinations())]
+        for i, p in enumerate(sorted(self.cube._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))):
+            #copy everything except assign the groups in correct order
+            group = self.cube.frontGroups[i]
+            frontPiecesCopy += [Piece(p.pos, p.getColors(), p.getLabels(), group, p.getDestinations())]
             
             
         #TODO need to assign front face: is either letter or '-'
@@ -168,7 +172,7 @@ class Solver:
                 
             assert labeledPiece != None
 
-            debugPieceList = list()
+            #debugPieceList = list()
             
             #for p in sorted(self.cube._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x)):
             #for p in self.cube.origionalFrontPieces:
@@ -321,7 +325,9 @@ class Solver:
     def move(self, move_str):
         self.moves.extend(move_str.split())
         self.cube.sequence(move_str)
-        #print (f"after move {move_str} cube looks like this: \n", self.cube)
+        if self.debugShowCubeAfterEveryMove:
+            # For debugging, show the cube
+            print (f"after move {move_str} cube looks like this: \n", self.cube)
 
     def undoLastMove(self):
         """

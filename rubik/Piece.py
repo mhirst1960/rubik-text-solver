@@ -129,10 +129,7 @@ class Piece:
         
         if all(f is None for f in self.solvedFaces):
             return None
-            
-        #x = {'L':-1, None:0, 'R':1}
-        #y = {'D':-1, None:0, 'U':1}
-        #z = {'B':-1, None:0, 'F':1}
+        
         xyz = {None:0, 'L':-1, 'R':1, 'D':-1, 'U':1, 'B':-1, 'F':1}
         
         px = xyz[self.solvedFaces[0]]
@@ -140,12 +137,6 @@ class Piece:
         pz = xyz[self.solvedFaces[2]]
         
         solvedPos = Point(px, py, pz)
-        
-#                          y[self.solvedFaces[1]],
-#                          z[self.solvedFaces[2]])
-        #solvedPos.x = [x[self.solvedFaces[0]]]
-        #solvedPos.y = [y[self.solvedFaces[1]]]
-        #solvedPos.z = [z[self.solvedFaces[2]]]
         
         return solvedPos
 

@@ -62,8 +62,8 @@ class CubeWebpage:
     """
 
     HTML_CUBE_TEMPLATE = """
-        <div style="width:400px; height:400px">
-        <div> Moves: {moves} </div>
+        <div style="width:400px; height:400px; float: left">
+        <div> {info} </div>
         <script>AnimCube3("config=AnimCube3.cfg&"
             +"edit=0&yz=1&hint=10&scale=3&"
             +"facelets={colors}&hint=10&scale=3"
@@ -84,6 +84,8 @@ class CubeWebpage:
         <body>
         <div> <H1> {title} </H1> </div>
         <div> <H3> {subtitle} </H3> </div>
+        <div> Moves: {moves} </div>
+
     """
 
     HTML_PAGE_SUFFIX_TEMPLATE = """
@@ -91,12 +93,15 @@ class CubeWebpage:
     </html>
     """
 
-    def __init__(self, htmlDir, htmlFile='index.html', cubeColors=None, cubeMoves='', title='Cube Viewer', subTitle=''):
+    def __init__(self, htmlDir, htmlFile='index.html', cubeColors=None, cubeState=None, cubeMoves='', title='Cube Viewer', subTitle=''):
         
         self.htmlDir = htmlDir
         self.htmlFile = htmlFile
         
-        self.cubeMoves = cubeMoves
+        if isinstance(cubeMoves, list):
+            self.cubeMoves = ''.join(cubeMoves)
+        else:
+            self.cubeMoves = cubeMoves
         
         self.title = title
         self.subTitle = subTitle
@@ -107,7 +112,27 @@ class CubeWebpage:
             self.cubeColors = cubeColors
         self.compactColors = "".join(x for x in self.cubeColors if x not in string.whitespace)
         
+        self.cubeState = cubeState
+        if self.cubeState == None:
+            self.compactState = None
+        else:
+            self.compactState = "".join(x for x in self.cubeState if x not in string.whitespace)
+            self.compactState = self.getDimColorString(self.compactState)
+ 
+
+        
         self.cubeOrder = CubeOrder()
+
+
+    def getDimColorString(self, colorString):
+        # convert to anim dim colors
+        tbl = {'W':'4', 'Y':'5', 'O':'6', 'R':'7', 'G':'8', 'B':'9',
+                'w':'4', 'y':'5', 'o':'6', 'r':'7', 'g':'8', 'b':'9'}
+        l = list(colorString)
+        for i,d in enumerate(l):
+            l[i] = tbl[l[i]]
+        dimString = ''.join(l)
+        return dimString
 
 
     def generateHTML(self):
@@ -119,6 +144,10 @@ class CubeWebpage:
         
         animColors = co.convert(self.compactColors, co.SLICE_UNFOLD_BACK, co.SLICE_ANIMJS3)
         animMoves = self.cubeMoves.replace('i', "'")
+        if self.compactState != None:
+            animStateColors = co.convert(self.compactState, co.SLICE_UNFOLD_BACK, co.SLICE_ANIMJS3)
+        else:
+            animStateColors = None
 
         # little icon in the browser tab
         copyfile(pythonScriptDir + "/favicon.ico", self.htmlDir + '/favicon.ico')
@@ -127,10 +156,13 @@ class CubeWebpage:
         f.write(self.config)
         f.close()
         
-        html = (self.HTML_PAGE_PREFIX_TEMPLATE.format(title=self.title, subtitle=self.subTitle) +
-            self.HTML_CUBE_TEMPLATE.format(colors=animColors, moves=animMoves) +
-            self.HTML_PAGE_SUFFIX_TEMPLATE
-        )
+        html = self.HTML_PAGE_PREFIX_TEMPLATE.format(title=self.title, subtitle=self.subTitle, moves=animMoves)
+        html += self.HTML_CUBE_TEMPLATE.format(info="Cube Colors", colors=animColors, moves=animMoves)
+        
+        if animStateColors != None:
+            html += self.HTML_CUBE_TEMPLATE.format(info="Cube State", colors=animStateColors, moves=animMoves)
+                                                   
+        html += self.HTML_PAGE_SUFFIX_TEMPLATE
         
         f = open(indexHtml, "w")
         f.write(html)

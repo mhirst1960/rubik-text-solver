@@ -26,6 +26,9 @@ from rubik.solve import Solver
 from rubik.optimize import optimize_moves
 from rubik.RobotMoves import RobotMoves
 from TmwSolvedCubes import tmwCubes
+from rubik.CubeWebpage import CubeWebpage
+from rubik.CubePrintStyles import CubePrintStyles
+from rubik.optimize import optimize_moves
 
 
 CUBE_COLORS = """
@@ -43,17 +46,18 @@ GGG WWW BBB YYY
 CUBE_COLOR_STRING = "OOOOOOOOOGGGWWWBBBYYYGGGWWWBBBYYYGGGWWWBBBYYYRRRRRRRRR"
 
 # pieces labeled with any character.  "-" means no label or None
-TMW_CUBE_LABELS_XRAY = """
+TMW_CUBE_LABELS_UNFOLD = """
     CEK
     B-L
     D-S
 J-L -T- --M ---
 ANJ -M- NVL Z--
---T -W- H-S ---
+--T -W- HS- ---
     LGG
     -E-
     --M
 """
+
 
 # pieces labeled with any character.  "-" means no label or None
 TMW_CUBE_GROUPS = """
@@ -128,44 +132,52 @@ def run():
         inputColors = inputColors.rstrip()
         assert len(inputColors) == 54
     
-    referenceCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_XRAY, TMW_CUBE_GROUPS)
+    referenceCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
     if DEBUG > 1: print (f"Initial reference cube: \n", referenceCube)
 
     co = CubeOrder()
     if inputOrder == 'xray':
-        xrayColors = inputColors
+        unfoldColors = co.convert(inputColors, co.SLICE_XRAYBACK, co.SLICE_UNFOLD_BACK)
     elif inputOrder == 'unfold':
-        xrayColors = co.convert(inputColors, co.SLICE_UNFOLD_BACK, co.SLICE_XRAYBACK)
+        unfoldColors = inputColors
     elif inputOrder == 'kociemba':
-        #xrayColors = co.convert(inputColors, co.COLOR_RESOLVER_ORDER, co.SLICE_XRAYBACK)
-        xrayColors = co.convert(inputColors, co.KOCIEMBA_ORDER, co.SLICE_XRAYBACK)
+        unfoldColors = co.convert(inputColors, co.KOCIEMBA_ORDER, co.SLICE_UNFOLD_BACK)
     else:
-        xrayColors = None
+        unfoldColors = None
 
-    unfoldColors = co.convert(xrayColors, co.SLICE_XRAYBACK, co.SLICE_UNFOLD_BACK)
-    kociembaColors = co.convert(xrayColors, co.SLICE_XRAYBACK, co.KOCIEMBA_ORDER)
+    xrayColors = co.convert(unfoldColors, co.SLICE_UNFOLD_BACK, co.SLICE_XRAYBACK)
+    kociembaColors = co.convert(unfoldColors, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
     if DEBUG > 1: print ("xray input:      ", xrayColors)
     if DEBUG > 1: print ("fold input:      ", unfoldColors)
     if DEBUG > 1: print ("kociemba input:  ", kociembaColors)
 
     # if string is cube state not colors, convert to colors
-    xrayColors = getColorString(xrayColors)
-            
-    #cube.setDestinationsToColors(xrayColors)
-    cCube = Cube(xrayColors)
+    unfoldColors = getColorString(unfoldColors)
+    unsolvedCubeColors = unfoldColors
+    
+    cCube = Cube(unfoldColors)
+    
+    #TODO for debug only
+    #cCube.setPrintStyle(CubePrintStyles.DestinationGroupColored)
 
     cCube.assignSecondaryAttributes(referenceCube)
+    print("new cube: \n", cCube)
     cubeSolver = Solver(cCube)
+    
+    # print version of the cube every time it moves
+    #cubeSolver.debugShowCubeAfterEveryMove = True
+    
     personCube = cubeSolver.generateCubeForMessage(person)
-    xDestinations = personCube.getDestinationString()
-    kDestinations = co.convert(xDestinations, co.SLICE_XRAYBACK, co.KOCIEMBA_ORDER)
-    xColors = personCube.colorString()
-    kColors = co.convert(xColors, co.SLICE_XRAYBACK, co.KOCIEMBA_ORDER)
-    aColors = co.convert(xColors, co.SLICE_XRAYBACK, co.SLICE_ANIMJS3)
+    unsolvedCubeState = personCube.getDestinationColorString()
+    #unsolvedCubeColors = personCube.getDestinationColorString()
+    kCubeDestinations = co.convert(unsolvedCubeState, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
+    cubeColors = personCube.colorString()
+    kColors = co.convert(cubeColors, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
+    aColors = co.convert(cubeColors, co.SLICE_UNFOLD_BACK, co.SLICE_ANIMJS3)
 
     if DEBUG > 1:
         print (f"{person} personCube before solve: \n", personCube)
-        print (f"xray colors:     {xColors}")
+        print (f"cube colors:     {cubeColors}")
         print (f"Kociemba colors: {kColors}")
         print (f"Anim colors:     {aColors}")
         
@@ -173,8 +185,14 @@ def run():
         if DEBUG > 1: print (f"cube before solve: \n", cCube)
         solver = Solver(cCube)
         #personCube = solver.generateCubeForMessage(person)
-        solver.solveFrontString(person)
+        solver.solveFront()
+        #solver.solveFrontString(person)
         moves = solver.moves
+        optimizedMoves = optimize_moves(moves)
+        rm = RobotMoves()
+        robotMoves = rm.convert(optimizedMoves)
+        optimizedRobotMoves = rm.optimize(optimizedMoves)
+        
         if moveNotation == "singmaster":
             for i, move in enumerate(moves):
                 move = move.replace("i", "'")
@@ -187,7 +205,7 @@ def run():
         if DEBUG > 1: print (f"Solved Moves: \n", moves)
     
     destinations = personCube.getDestinationString()
-    kociembaDestinations = co.convert(destinations, co.SLICE_XRAYBACK, co.KOCIEMBA_ORDER)
+    kociembaDestinations = co.convert(destinations, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
     xrayColors = getColorString(destinations)
     kociembaColors = getColorString(kociembaDestinations)
 
@@ -210,10 +228,35 @@ def run():
         print (f"{cCube.getFrontString()}")
     elif outputDataType == 'moves':
         print (f"{solver.getMovesString()}")
-        
-    subprocess.run(["python3",
-                    "/Users/michaelhirst/TMW/rubik/hkociemba/RubiksCube-TwophaseSolver/main.py",
-                    kDestinations])
+
+    doKociembaOptimization = False
+    if doKociembaOptimization:
+        #kociemba requires server to be running
+        # cd .../RubiksCube-TwophaseSolver
+        # python3 start_server.py 8080 20 2
+        #
+        proc1 = subprocess.Popen(['echo', kociembaDestinations], stdout=subprocess.PIPE)
+        proc2 = subprocess.Popen(['nc', 'localhost', '8080'], stdin=proc1.stdout,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        proc1.stdout.close() # Allow proc1 to receive a SIGPIPE if proc2 exits.
+        out, err = proc2.communicate()
+        print('kociemba output: {0}'.format(out))
+        print('stderr: {0}'.format(err))
+        kMoves = out.decode('utf-8').split('(')[0]
+        print(f"{person} kociembe moves: {kMoves}")
+        kMovesList = kMoves.split(' ')
+        kRobotMoves = rm.optimize(kMovesList)
+        print(f"{person} k robot moves: {' '.join(kRobotMoves)}")
+
+    subtitle = f"Cube for {person}"
+    html = CubeWebpage("/Users/michaelhirst/TMW/rubik/cubeviewer",
+                        cubeColors=unsolvedCubeColors,
+                        cubeState=unsolvedCubeState,
+                        cubeMoves=optimizedRobotMoves,
+                        subTitle=subtitle)
+    html.generateHTML()
+    print ("Cube URL: file:/Users/michaelhirst/TMW/rubik/cubeviewer/index.html")
 
 if __name__ == '__main__':
     DEBUG = 0
@@ -223,7 +266,7 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', '-v', action='count', default=0, \
         help="show debug messages -v, -vv, -vvv for more and more debug")
     parser.add_argument("--person", default='TMW', help="initials for person to solve for")
-    parser.add_argument("--inputorder", default='xray', help="Color input from camera or color string order: back=front, onfolded paper cube, or orbital kociemba", \
+    parser.add_argument("--inputorder", default='unfold', help="Color input from camera or color string order: back=front, onfolded paper cube, or orbital kociemba", \
                             choices=['xray', 'unfold', 'kociemba', 'camera'])
     parser.add_argument("--infile", \
         help="File contains one line list of colors: OGYWBR and order depends on --inputorder: back=front, onfolded paper cube, or orbital kociemba")

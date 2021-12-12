@@ -17,6 +17,8 @@ class RobotMoves:
         ]
     
     GrippersYZ = {
+        '':[],
+        
         'Y':['Y'],
         'Yi':['Yi'],
         'Y2':['Y2'],
@@ -71,6 +73,8 @@ class RobotMoves:
         newMoves = list()
         
         for move in moves:
+            move = move.replace('3', 'i')
+            move = move.replace('1', '')
             if move in self.converter:
                 nm = self.converter[move]
                 for newMove in nm:
@@ -85,6 +89,7 @@ class RobotMoves:
         return newMoves
 
     def optimize (self, moves):
+        
         
         newMoves = self.convert(moves)
         

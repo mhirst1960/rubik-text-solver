@@ -290,13 +290,13 @@ def run():
     if False:
         # convert to various cube notations
         co = CubeOrder()
-        unwrap = re.sub(r'\s+', '', TMW_CUBE_LABELS_UNFOLD)
+        unwrapState = re.sub(r'\s+', '', TMW_CUBE_LABELS_UNFOLD)
         #xray = ''.join(TMW_CUBE_LABELS_UNFOLD.strip())
-        unfoldBack = co.convert(unwrap, co.SLICE_XRAYBACK, co.SLICE_UNFOLD_BACK)
-        kociembaInput = co.convert(unwrap, co.SLICE_XRAYBACK, co.KOCIEMBA_ORDER)
-        print (f"xray        = \"\"\"\n{unwrap}\n\"\"\"")
+        unfoldBack = co.convert(unwrapState, co.SLICE_XRAYBACK, co.SLICE_UNFOLD_BACK)
+        kociembaState = co.convert(unwrapState, co.SLICE_XRAYBACK, co.KOCIEMBA_ORDER)
+        print (f"xray        = \"\"\"\n{unwrapState}\n\"\"\"")
         print (f"unfold back = \"\"\"\n{unfoldBack}\n\"\"\"")
-        print (f"kociemba    = \"\"\"\n{kociembaInput}\n\"\"\"")
+        print (f"kociemba    = \"\"\"\n{kociembaState}\n\"\"\"")
         
 
     # test all combos of solving from any person to different person
@@ -316,10 +316,10 @@ def run():
                 solver.solve()
                 print (f"{toName} To after solved: \n", cube)
                 #cube.alignToColors(toParams["colors"])
-                unwrap = cube.flat_str()
-                kociembaInput = co.convert(unwrap, co.SLICE_XRAYBACK, co.KOCIEMBA_ORDER)
-                print (f"{toName} xray     = \"\"\"\n{unwrap}\n\"\"\"")
-                print (f"{toName} kociemba = \"\"\"\n{kociembaInput}\n\"\"\"")
+                unwrapState = cube.flat_str()
+                kociembaState = co.convert(unwrapState, co.SLICE_XRAYBACK, co.KOCIEMBA_ORDER)
+                print (f"{toName} xray     = \"\"\"\n{unwrapState}\n\"\"\"")
+                print (f"{toName} kociemba = \"\"\"\n{kociembaState}\n\"\"\"")
         
         
     # test align to colors
@@ -437,28 +437,57 @@ def run():
                 print (f"{person} unsolved cube = ", personCube)
                 
                 unsolvedCubeString = personCube.colorString()
+                unsolvedCubeState = personCube.getDestinationColorString()
                 
-                unwrap = personCube.getDestinationString()
-                kociembaInput = co.convert(unwrap, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
-                print (f"{person} unfold   = \"{unwrap}\"")
-                print (f"{person} kociemba = \"{kociembaInput}\"")
+                unwrapState = personCube.getDestinationString()
+                kociembaState = co.convert(unwrapState, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
+                print (f"{person} state    = \"{unwrapState}\"")
+                print (f"{person} kociemba = \"{kociembaState}\"")
                 peopleSolver = Solver(personCube)
-                peopleSolver.solve()
+                peopleSolver.solveFront()
                 
-                moves = peopleSolver.getMovesString()
-                subtitle = f"Cube for {person}"
-                html = CubeWebpage("/Users/michaelhirst/TMW/rubik/cubeviewer",
-                                   cubeColors=unsolvedCubeString,
-                                   cubeMoves=moves,
-                                   subTitle=subtitle)
-                html.generateHTML()
+                moves = peopleSolver.getMovesString()                
+                optimizedMoves = optimize_moves(peopleSolver.moves)
+                rm = RobotMoves()
+                robotMoves = rm.convert(optimizedMoves)
+                optimizedRobotMoves = rm.optimize(optimizedMoves)
                                 
                 print ("moves: ", peopleSolver.getMovesString())
                 print (f"{person} solved cube = ", personCube)
-                subprocess.run(["python3",
-                    "/Users/michaelhirst/TMW/rubik/hkociemba/RubiksCube-TwophaseSolver/main.py",
-                    kociembaInput])
+                
+                if doKociembaOptimization:
+                    #kociemba requires server to be running
+                    # cd .../RubiksCube-TwophaseSolver
+                    # python3 start_server.py 8080 20 2
+                    #
+                    #output = subprocess.run(["python3",
+                    #    "/Users/michaelhirst/TMW/rubik/hkociemba/RubiksCube-TwophaseSolver/main.py",
+                    #    kociembaInput], stdout=subprocess.PIPE).stdout.decode('utf-8')
+                    #print ("kociemba output: ", output)
+                    proc1 = subprocess.Popen(['echo', kociembaState], stdout=subprocess.PIPE)
+                    proc2 = subprocess.Popen(['nc', 'localhost', '8080'], stdin=proc1.stdout,
+                                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+                    proc1.stdout.close() # Allow proc1 to receive a SIGPIPE if proc2 exits.
+                    out, err = proc2.communicate()
+                    print('kociemba output: {0}'.format(out))
+                    print('stderr: {0}'.format(err))
+                    kMoves = out.decode('utf-8').split('(')[0]
+                    print(f"{person} kociembe moves: {kMoves}")
+                    kMovesList = kMoves.split(' ')
+                    kRobotMoves = rm.optimize(kMovesList)
+                    print(f"{person} k robot moves: {' '.join(kRobotMoves)}")
+
+                print(f"{person} robot moves:   {' '.join(robotMoves)}\n")
+                #TODO kociemba uses fewer moves but is not quite working.  someday use this
+                subtitle = f"Cube for {person}"
+                html = CubeWebpage("/Users/michaelhirst/TMW/rubik/cubeviewer",
+                                   cubeColors=unsolvedCubeState,
+                                   cubeMoves=robotMoves,
+                                   subTitle=subtitle)
+                html.generateHTML()
+                
+                print("------------------------------------")
         
     if False:
 

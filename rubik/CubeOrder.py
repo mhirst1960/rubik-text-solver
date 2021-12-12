@@ -120,10 +120,6 @@ class CubeOrder:
     B1, B2, B3,   # R3 is next to B1
     B4, B5, B6,   # R6 is next to B4
     B7, B8, B9    # R9 is next to B7
-
-    #B3, B2, B1,
-    #B6, B5, B4,
-    #B9, B8, B7
     
     ]
 
