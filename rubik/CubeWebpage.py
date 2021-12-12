@@ -95,7 +95,8 @@ class CubeWebpage:
 
     HTML_ERROR_TEMPLATE = """
         <div style="width:400px; height:400px; float: left">
-         ERROR: file not found: {animjsFile} <br>
+        <br> <br>
+        ERROR: file not found: {animjsFile} <br>
 please download 3x3x3-AnimCubeJS.zip from <a href="https://cubing.github.io/AnimCubeJS/animcubejs.html#download">cubing.github.io/AnimCubeJS</a>  <br>
 and install like this: <br>
     cd {htmlDir}<br>
@@ -112,7 +113,6 @@ and install like this: <br>
         self.animjsFile = htmlDir + "/AnimCube3.js"
         if not os.path.exists(self.animjsFile):
             errorText = f"""
-<br> <br>
 ERROR: file not found: {self.animjsFile} <br>
 please download 3x3x3-AnimCubeJS.zip from https://cubing.github.io/AnimCubeJS/animcubejs.html#download <br>
 and install like this:
