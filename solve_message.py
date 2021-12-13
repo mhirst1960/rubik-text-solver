@@ -77,7 +77,7 @@ TMW_PEOPLE = [
     "LEG",  # Lily
     
     "SMT", # Steph
-    "MAL", # Steph's wife
+    "MAL", # Michelle
 
 ]
 

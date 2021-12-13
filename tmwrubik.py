@@ -18,6 +18,9 @@ import time
 import re
 import argparse
 import subprocess
+import os
+from pathlib import Path
+from shutil import copyfile
 
 from rubik import solve
 from rubik.cube import Cube
@@ -94,7 +97,7 @@ TMW_PEOPLE = [
     "LEG",  # Lily
     
     "SMT", # Steph
-    "MAL", # Steph's wife
+    "MAL", # Michelle
 
 ]
 
@@ -155,13 +158,15 @@ def run():
     unfoldColors = getColorString(unfoldColors)
     unsolvedCubeColors = unfoldColors
     
+    origionalCube = Cube(unfoldColors)
     cCube = Cube(unfoldColors)
     
     #TODO for debug only
     #cCube.setPrintStyle(CubePrintStyles.DestinationGroupColored)
 
     cCube.assignSecondaryAttributes(referenceCube)
-    print("new cube: \n", cCube)
+    
+    if DEBUG > 1: print("new cube: \n", cCube)
     cubeSolver = Solver(cCube)
     
     # print version of the cube every time it moves
@@ -181,28 +186,28 @@ def run():
         print (f"Kociemba colors: {kColors}")
         print (f"Anim colors:     {aColors}")
         
-    if outputDataType == 'colors' or outputDataType == 'frontstring' or outputDataType == 'moves':
-        if DEBUG > 1: print (f"cube before solve: \n", cCube)
-        solver = Solver(cCube)
-        #personCube = solver.generateCubeForMessage(person)
-        solver.solveFront()
-        #solver.solveFrontString(person)
-        moves = solver.moves
-        optimizedMoves = optimize_moves(moves)
-        rm = RobotMoves()
-        robotMoves = rm.convert(optimizedMoves)
-        optimizedRobotMoves = rm.optimize(optimizedMoves)
-        
-        if moveNotation == "singmaster":
-            for i, move in enumerate(moves):
-                move = move.replace("i", "'")
-                moves[i] = move
-        elif moveNotation == "programmer":
-            for i, move in enumerate(moves):
-                move = move.replace("'", "i")
-                moves[i] = move
-        if DEBUG > 1: print (f"Solved Cube: \n", cCube)
-        if DEBUG > 1: print (f"Solved Moves: \n", moves)
+    #if updateState or outputDataType == 'colors' or outputDataType == 'frontstring' or outputDataType == 'moves':
+    if DEBUG > 1: print (f"cube before solve: \n", cCube)
+    solver = Solver(cCube)
+    #personCube = solver.generateCubeForMessage(person)
+    solver.solveFront()
+    #solver.solveFrontString(person)
+    moves = solver.moves
+    optimizedMoves = optimize_moves(moves)
+    rm = RobotMoves()
+    robotMoves = rm.convert(optimizedMoves)
+    optimizedRobotMoves = rm.optimize(optimizedMoves)
+    
+    if moveNotation == "singmaster":
+        for i, move in enumerate(moves):
+            move = move.replace("i", "'")
+            moves[i] = move
+    elif moveNotation == "programmer":
+        for i, move in enumerate(moves):
+            move = move.replace("'", "i")
+            moves[i] = move
+    if DEBUG > 1: print (f"Solved Cube: \n", cCube)
+    if DEBUG > 1: print (f"Solved Moves: \n", moves)
     
     destinations = personCube.getDestinationString()
     kociembaDestinations = co.convert(destinations, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
@@ -217,7 +222,8 @@ def run():
         print (f"Kociemba Destinations: {kociembaDestinations}")
         print (f"Kociemba Colors:       {kociembaColors}")
         print (f"Message:               {cCube.getFrontString()}")
-        print (f"Moves:                 {solver.getMovesString()}")
+        if outputDataType == 'colors' or outputDataType == 'frontstring' or outputDataType == 'moves':
+            print (f"Moves:                 {solver.getMovesString()}")
         print ("---------------------------------------")
 
     if outputDataType == "destinations":
@@ -250,13 +256,38 @@ def run():
         print(f"{person} k robot moves: {' '.join(kRobotMoves)}")
 
     subtitle = f"Cube for {person}"
-    html = CubeWebpage("/Users/michaelhirst/TMW/rubik/cubeviewer",
+    home = str(Path.home())
+    htmlPath = home + "/cubeviewer"
+    if not os.path.exists(htmlPath):
+        os.mkdir(htmlPath)
+    html = CubeWebpage(htmlPath,
                         cubeColors=unsolvedCubeColors,
                         cubeState=unsolvedCubeState,
                         cubeMoves=optimizedRobotMoves,
                         subTitle=subtitle)
     html.generateHTML()
-    print ("Cube URL: file:/Users/michaelhirst/TMW/rubik/cubeviewer/index.html")
+    print (f"Cube URL: file:{htmlPath}/index.html")
+    
+    # updatestate = persistance. Next time we run cube will be configured as we left off here
+    if updateState and inputFile != None:
+        solver = Solver(origionalCube)
+        solver.move(" ".join(optimizedRobotMoves))
+        unfoldOutputColors = origionalCube.colorString()
+        if inputOrder == 'xray':
+            outputColors = co.convert(unfoldOutputColors, co.SLICE_UNFOLD_BACK, co.SLICE_XRAYBACK)
+        elif inputOrder == 'unfold':
+            outputColors = unfoldOutputColors
+        elif inputOrder == 'kociemba':
+            outputColors = co.convert(unfoldOutputColors, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
+        else:
+            outputColors = None
+        
+        if outputColors is not None:
+            copyfile(inputFile, inputFile+".bak")
+            f = open(inputFile, "w")
+            f.write(outputColors + "\n")
+            f.close()
+            if DEBUG >1: print(f"wrote new cube state to file {inputFile}")
 
 if __name__ == '__main__':
     DEBUG = 0
@@ -272,6 +303,10 @@ if __name__ == '__main__':
         help="File contains one line list of colors: OGYWBR and order depends on --inputorder: back=front, onfolded paper cube, or orbital kociemba")
     parser.add_argument("--input", default='OOOOOOOOOGGGWWWBBBYYYGGGWWWBBBYYYGGGWWWBBBYYYRRRRRRRRR', \
         help='values for input are: "camera", "file", or list of colors: OGYWBR and order depends on --inputorder: back=front, onfolded paper cube, or orbital kociemba')
+    parser.add_argument('--updatestate', dest='updatestate', action='store_true', help="for persistance, update input file with current state when finished (default: --updatestate)")
+    parser.add_argument('--no-updatestate', dest='updatestate', action='store_false', help="Do not persist the state.  Do not update input file. (default: --updatestate)")
+    parser.set_defaults(updatestate=True)
+
     parser.add_argument("--output", default='moves', help="robot solve, or print planned moves, or print destination order: back=front, onfolded paper cube, or orbital kociemba", \
                             choices=['xray', 'unfold', 'kociemba', 'robot', 'moves'])
     parser.add_argument("--outputdatatype", default='destinations', help="how should we print output (No output = None)", \
@@ -287,6 +322,7 @@ if __name__ == '__main__':
     parser.add_argument('--no-camera', dest='camera', action='store_false', help="Do not use the camera (default: --no-camera)")
     parser.set_defaults(camera=False)
 
+    parser.add_argument('--simulation', dest='simulation', action='store_true', help="do not use the camera or robot. Generate webpage and update state file when done.")
     
     args = parser.parse_args()
     
@@ -299,6 +335,7 @@ if __name__ == '__main__':
     inputOrder = args.inputorder
     outputDataType = args.outputdatatype
     moveNotation = args.movenotation
+    updateState = args.updatestate
 
     inputFile = None
     inputColors = None
@@ -336,5 +373,8 @@ if __name__ == '__main__':
 
     outputStyle = args.output
     
+    if args.simulation:
+        solveWithRobot = False
+        getInputFromCamera = False
     
     run()

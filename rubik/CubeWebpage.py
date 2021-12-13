@@ -114,7 +114,7 @@ and install like this: <br>
         if not os.path.exists(self.animjsFile):
             errorText = f"""
 ERROR: file not found: {self.animjsFile} <br>
-please download 3x3x3-AnimCubeJS.zip from https://cubing.github.io/AnimCubeJS/animcubejs.html#download <br>
+please download 3x3x3-AnimCubeJS.zip from https://cubing.github.io/AnimCubeJS/animcubejs.html#download
 and install like this:
     cd {htmlDir}
     unzip 3x3x3-AnimCubeJS.zip
@@ -193,7 +193,7 @@ and install like this:
             html += self.HTML_CUBE_TEMPLATE.format(info="Cube Colors", colors=animColors, moves=animMoves)
             
             if animStateColors != None:
-                html += self.HTML_CUBE_TEMPLATE.format(info="Cube State", colors=animStateColors, moves=animMoves)
+                html += self.HTML_CUBE_TEMPLATE.format(info="Cube State (the colors we tricked the robot into using)", colors=animStateColors, moves=animMoves)
                                                    
         html += self.HTML_PAGE_SUFFIX_TEMPLATE
         

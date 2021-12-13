@@ -118,6 +118,10 @@ class Solver:
 
 
     def generateCubeForMessage(self, frontString):
+        #TODO: solving thee cube twice in a row should result in no moves.
+        #      if front face  piece is good as-is (blank piece == blank) use it
+        #      and no need to rotate the cube unnecessarily at the beginning for a new blank center
+        
         # start fresh.  Destinations are assigned based on front string
         self.cube.clearAllDestinations()
         
