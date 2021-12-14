@@ -125,15 +125,16 @@ class Solver:
         # start fresh.  Destinations are assigned based on front string
         self.cube.clearAllDestinations()
         
+        frontGroups = self.cube.getSolvedGroups('F')
+
         frontPiecesCopy = list()
         for i, p in enumerate(sorted(self.cube._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))):
             #copy everything except assign the groups in correct order
-            group = self.cube.frontGroups[i]
+            group = frontGroups[i]
             frontPiecesCopy += [Piece(p.pos, p.getColors(), p.getLabels(), group, p.getDestinations())]
             
             
-        #TODO need to assign front face: is either letter or '-'
-        middleGroup = self.cube.frontFaceGroup()
+        middleGroup = frontGroups[4]
         middleGroupIndex = int(middleGroup) - 1
         middleLetter = frontString[middleGroupIndex]
         middlePiece = self.cube.findPieceByLabelAndGroupWithNoDestination(middleLetter, middleGroup, FACE)
@@ -237,20 +238,6 @@ class Solver:
         print (f"{frontString} Cube is configured. Unsolved is this: \n", self.cube)
         print ("========================================")
         print ("========================================")
-
-        if True:
-            #Just verifying that cube can be solved
-            tmpCube = Cube(self.cube)
-            tSolver = Solver(tmpCube)
-            tSolver.solve()
-            tSolver.orientToFront()
-            print (f" {frontString} Cube solved front not aligned:\n", tmpCube)
-            tSolver.alignToMessageOrder()
-            print (f" {frontString} Cube solved front:\n", tmpCube)
-            tmpCube.assignDefaultDestinations()
-            tSolver.undoAllMoves()
-            print (f" {frontString} Cube origional orientation:\n", tmpCube)
-            print (f" {frontString} should match origional cube:\n", self.cube)
         
                 
         return self.cube
@@ -314,7 +301,7 @@ class Solver:
         
     def alignToMessageOrder(self):
         """
-        rotate the cube so beginning of message is top-left and end if botto-left
+        rotate the cube so beginning of message is top-left and end if bottom-left
         Simply rotate around Z until groups are in increasing numberical order
         """
         FRONT = Point(0, 0, 1)
@@ -362,7 +349,7 @@ class Solver:
         Use legal cube moves to place the piece in the destinationPosition
         such that the sticker with labelChar faces front
         """
-        
+                
         labels = piece.getLabels()
         if piece.type == FACE:
             for i, label in enumerate(labels):
@@ -522,7 +509,11 @@ class Solver:
                 assert count < 5
             
             # piece is in front: move to back-right
-            self.move("S Di Si D")
+            self.move("E B Ei Bi")
+            
+            #undo the Z moves so front and back pieces are right edge
+            for _ in range(count):
+                self.move("Zi")
             
         #if edgePiece z=0 move to left-down
         if edgePiece.pos.z == 0:

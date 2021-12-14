@@ -61,6 +61,8 @@ class Cube:
 
         self.pieces = self.faces + self.edges + self.corners
         
+        self.solvedGroups = c.solvedGroups
+        
         assert c == self
           
     def _assert_data(self):
@@ -113,8 +115,25 @@ class Cube:
         return p
 
         
-    def __init__(self, colors, labels=None, groups=None, backViewIsXray=False):
+    def __init__(self, colors, labels=None, groups=None, solvedGroups=None, backViewIsXray=False):
         """
+        parameters:
+            colors: string of characters WYORGB for white, yellow, orange, red, green, blue stickers
+            labels: any character you want to place on a sticker ("-" means blank)
+            groups: (current arrangement of groups) each piece is part of a group where each letter in the
+                    solved message is found within its own group.  There are the same number of groups as
+                    there are letters in the message.  For example: For three initials in a person's name
+                    or three-letter animal spelling there will three groups on the cube.
+            solvedGroups: the orientation of groups in a solved cube.  groups should be designed
+                          so group 1 is upper-left and the last group is lower-right because the
+                          solved cube will be automatically be oriented in group order
+            backViewIsXray: normally the cube is initialized and printed so "back" stickers
+                            are unfolded so opposite order as front stickers.
+                            If parameter backViewIsXray is set to True then back is same order as front
+                            as if viewing from the front xray through the cube
+                            So 18 (on the back) is directly under 12 (on the front).
+                            If that is the case these are in the same piece: 17,20 29,32 41,44
+        
         cube_str looks like:
                 UUU                        0  1  2
                 UUU                        3  4  5
@@ -127,11 +146,6 @@ class Cube:
                 DDD                       51 52 53
         Note by default the back side is "unfolded" as if flattening a paper cube.
         So, by default these are in the same piece: 17,18 29,30  41,42
-        
-        If parameter backViewIsXray is set to True then back is same order as front
-        as if viewing from the front xray through the cube
-        So 18 (on the back) is directly under 12 (on the front).
-        If that is the case these are in the same piece: 17,20 29,32 41,44
         
         Each 'sticker' must be a single character or '-' for no label
         
@@ -163,6 +177,11 @@ class Cube:
         else:
             groups_str = "".join(x for x in groups if x not in string.whitespace)
 
+
+        if solvedGroups == None:
+            self.solvedGroups = groups_str
+        else:
+            self.solvedGroups = "".join(x for x in solvedGroups if x not in string.whitespace)
 
         assert len(cube_str) == 54
         assert len(labels_str) == 54
@@ -781,6 +800,28 @@ class Cube:
         else:
             return ''
 
+    def getSolvedGroupString(self, face=None):
+        sg = self.solvedGroups
+        if face == None:
+            return self.solvedGroups
+        elif face == 'R':
+            return sg[15:18] + sg[27:30] + sg[39:42]
+        elif face == 'L':
+            return sg[9:12] + sg[21:24] + sg[33:36]
+        elif face == 'U':
+            return sg[:9]
+        elif face == 'D':
+            return sg[-9:]
+        elif face == 'F':
+            return sg[12:15] + sg[24:27] + sg[36:39]
+        elif face == 'B':
+            return sg[18:21] + sg[30:33] + sg[42:45]
+        else:
+            return ''
+ 
+    def getSolvedGroups(self, face=None):
+        return list(self.getSolvedGroupString(face))
+        
     def _destination_list(self):
         right = [p.getDestinationsNotNone()[0] for p in sorted(self._face(RIGHT), key=lambda p: (-p.pos.y, -p.pos.z))]
         left  = [p.getDestinationsNotNone()[0] for p in sorted(self._face(LEFT),  key=lambda p: (-p.pos.y, p.pos.z))]

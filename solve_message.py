@@ -15,6 +15,7 @@ from rubik.optimize import optimize_moves
 from rubik.RobotMoves import RobotMoves
 from TmwSolvedCubes import tmwCubes
 from rubik.CubeWebpage import CubeWebpage
+from rubik.CubePrintStyles import CubePrintStyles
 
 
 CUBE_COLORS = """
@@ -231,6 +232,16 @@ def easy_cube(solvedString=CUBE_COLORS, labels=TMW_CUBE_LABELS_UNFOLD, groups=TM
 
     return a
 
+def getColorString(destinationsString):
+    # if string is cube state not colors, convert to colors
+    allowed = set('UDFBLR')
+    if set(destinationsString) <= allowed:
+        tbl = {'U':'O','D':'R','F':'W','B':'Y','L':'G','R':'B'}
+        l = list(destinationsString)
+        for i,d in enumerate(l):
+            l[i] = tbl[l[i]]
+        destinationsString = ''.join(l)
+    return destinationsString
 
 def run():
     successes = 0
@@ -240,6 +251,8 @@ def run():
     avg_robot_moves = 0.0
     avg_moves = 0.0
     avg_time = 0.0
+
+    co = CubeOrder()
 
     # testing robot moves    
     if False:
@@ -419,11 +432,66 @@ def run():
         print(f"{person} kociemba {kociembaMoves}\nsolved cube:", cCube)
         
     if True:
+        # test bugs in specific configurations
+        
+        person = "MAL"
+        labels = "-N---B--JHAM-JC-----G----NS-MZLV-L---W-LEMK--SGDTE-TL-"
+        colors = "FRBBUURFLRLDBLUBLDLFDDBBDLRDFBRRLDURFFFLURURFUDUFDBLUB"
+        groups = "323221321323321113323323323322223311131111113131121311"
+        
+        person = "LMH"
+        labels = "G---N-L-M-J-DN--E---H--B-E-LMA----TCJZ-MST-WS-LK-V--GL"
+        colors = "DDDFLBLFDFLFURBRULBLRBBULDRUFLBUDRFULBBRRLFFUBRUURDFDD"
+        groups = "333221123321123313333321121122223111121133331121123133"
+
+        #colors = CUBE_COLORS
+        #labels = TMW_CUBE_LABELS_UNFOLD
+        #groups = TMW_CUBE_GROUPS
+        
+        print("Bug check solving for: ", person)
+        colors = getColorString(colors)
+        cube = Cube(colors, labels, groups, TMW_CUBE_GROUPS)
+        #cube.setPrintStyle(CubePrintStyles.DestinationGroupColored)
+        cubeSolver = Solver(cube)
+        #cubeSolver.debugShowCubeAfterEveryMove = True
+        print (f"{person} initial cube cube = ", cube)
+        personCube = cubeSolver.generateCubeForMessage(person)
+        print (f"{person} unsolved cube = ", personCube)
+
+        unsolvedCubeString = personCube.colorString()
+        unsolvedCubeState = personCube.getDestinationColorString()
+        
+        unwrapState = personCube.getDestinationString()
+        print (f"{person} state    = \"{unwrapState}\"")
+        peopleSolver = Solver(personCube)
+        peopleSolver.solveFront()
+        print (f"{person} solved front = ", personCube)
+        
+        frontString = personCube.getFrontString()
+        print ("Solved front string: ", frontString)
+    
+        assert personCube.is_solved(frontString)
+        assert personCube.getFrontString() == person
+        
+        
+        moves = peopleSolver.getMovesString()                
+        optimizedMoves = optimize_moves(peopleSolver.moves)
+        rm = RobotMoves()
+        robotMoves = rm.convert(optimizedMoves)
+        optimizedRobotMoves = rm.optimize(optimizedMoves)
+                        
+        print ("moves: ", peopleSolver.getMovesString())
+        print (f"{person} solved cube = ", personCube)
+        
+        frontString = personCube.getFrontString()
+        print ("Solved front string: ", frontString)
+        assert personCube.getFrontString() == person
+                
+    if True:
         # generate kociemba orientations for cubes based on a person
         people = TMW_PEOPLE
-        co = CubeOrder()
 
-        for t in range(1):
+        for t in range(1000):
             if DEBUG: print ("=============== test loop ", t, " =====================")
             #random.shuffle(people)
             for person in people:
@@ -433,7 +501,9 @@ def run():
                 if DEBUG > 0: print("Solving for: ", person)
 
                 
-                cube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
+                #cube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
+                cube = random_cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
+                #cube.setPrintStyle(CubePrintStyles.DestinationGroupColored)
                 cubeSolver = Solver(cube)
                 personCube = cubeSolver.generateCubeForMessage(person)
                 print (f"{person} unsolved cube = ", personCube)
@@ -456,7 +526,9 @@ def run():
                                 
                 print ("moves: ", peopleSolver.getMovesString())
                 print (f"{person} solved cube = ", personCube)
-                
+                assert personCube.is_solved(person)
+                assert personCube.getFrontString() == person.replace("-", "") # same as is_solved()
+
                 doKociembaOptimization = False
                 if doKociembaOptimization:
                     #kociemba requires server to be running
