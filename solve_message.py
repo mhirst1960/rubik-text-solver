@@ -444,6 +444,12 @@ def run():
         colors = "DDDFLBLFDFLFURBRULBLRBBULDRUFLBUDRFULBBRRLFFUBRUURDFDD"
         groups = "333221123321123313333321121122223111121133331121123133"
 
+        # This CAM fails kociemba because center pieces are solved to wrong orientation
+        person = "CAM"
+        labels = "--G-E-K-T--M-BL--H-JM-MZLNS--L-VEJGS-NLDT--AC---W-----"
+        colors = "RFDDDBULLBLRBUDFDRFLDBFBRLRDBURRULDURRLUFDBLUFFFFUUBBL"
+        groups = "323323113331113333323122223321121131121113321121321123"
+
         #colors = CUBE_COLORS
         #labels = TMW_CUBE_LABELS_UNFOLD
         #groups = TMW_CUBE_GROUPS
@@ -504,8 +510,11 @@ def run():
                 #cube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
                 cube = random_cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
                 #cube.setPrintStyle(CubePrintStyles.DestinationGroupColored)
+                verifierCube = Cube(cube) # save for the end to verify moves are correct
+                verifierCube2 = Cube(cube) # save for the end to verify moves are correct
                 cubeSolver = Solver(cube)
                 personCube = cubeSolver.generateCubeForMessage(person)
+                #earlyMoves = personCube.orientToFront() # kociemba requires cube proper orientation
                 print (f"{person} unsolved cube = ", personCube)
                 
                 unsolvedCubeString = personCube.colorString()
@@ -529,12 +538,17 @@ def run():
                 assert personCube.is_solved(person)
                 assert personCube.getFrontString() == person.replace("-", "") # same as is_solved()
 
-                doKociembaOptimization = False
+                doKociembaOptimization = True
                 if doKociembaOptimization:
+                    # this does not seem to work reliably I get this error:
+                    #Error: Wrong edge and corner parity
+
                     #kociemba requires server to be running
                     # cd .../RubiksCube-TwophaseSolver
                     # python3 start_server.py 8080 20 2
                     #
+                    
+                    # if it is not running then stdout returns ''
                     #output = subprocess.run(["python3",
                     #    "/Users/michaelhirst/TMW/rubik/hkociemba/RubiksCube-TwophaseSolver/main.py",
                     #    kociembaInput], stdout=subprocess.PIPE).stdout.decode('utf-8')
@@ -549,11 +563,24 @@ def run():
                     print('stderr: {0}'.format(err))
                     kMoves = out.decode('utf-8').split('(')[0]
                     print(f"{person} kociembe moves: {kMoves}")
-                    kMovesList = kMoves.split(' ')
-                    kRobotMoves = rm.optimize(kMovesList)
-                    print(f"{person} k robot moves: {' '.join(kRobotMoves)}")
+                
+                    if "Error" in kMoves:
+                        print ("Error from kociemba: ", kMoves)
+                    elif kMoves == '':
+                        print ("kocieba server not running.  Do this:")
+                        print ("python3 RubiksCube-TwophaseSolver/start_server.py 8080 20 2")
+                    else:
+                        verifierCube2.sequence(kMoves)
+                        print (f"{person} verifier2 solved cube = ", verifierCube2)
+                        if not verifierCube2.is_solved(person):
+                            #TODO I think need to rotate cube so front piece is in front
+                            print ("kocieba failed to solve the cube correctly.")
+                        else:                    
+                            kMovesList = kMoves.split(' ')
+                            optimizedRobotMoves = rm.optimize(kMovesList)
+                            #print(f"{person} k robot moves: {' '.join(optimizedRobotMoves)}")
 
-                print(f"{person} robot moves:   {' '.join(robotMoves)}\n")
+                print(f"{person} robot moves:   {' '.join(optimizedRobotMoves)}\n")
                 #TODO kociemba uses fewer moves but is not quite working.  someday use this
                 subtitle = f"Cube for {person}"
                 home = str(Path.home())
@@ -566,6 +593,11 @@ def run():
                                     cubeMoves=robotMoves,
                                     subTitle=subtitle)
                 html.generateHTML()
+                
+                verifierCube.sequence(optimizedRobotMoves)
+                print (f"{person} verifier solved cube = ", verifierCube)
+
+                assert verifierCube.is_solved(person)
                 
                 print("------------------------------------")
         

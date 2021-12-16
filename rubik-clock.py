@@ -1,9 +1,15 @@
 import random
 import time
+import subprocess
+from pathlib import Path
+from shutil import copyfile
+
 from rubik import solve
 from rubik.cube import Cube
 from rubik.solve import Solver
 from rubik.optimize import optimize_moves
+from rubik.CubeOrder import CubeOrder
+from rubik.RobotMoves import RobotMoves
 
 
 CUBE_COLORS = """
@@ -33,8 +39,8 @@ CLOCK_CUBE_GROUPS = """
     244
     122
 221 122 242 222
-643 344 444 644
-665 566 661 661
+643 344 444 446
+665 566 661 166
     566
     646
     661
@@ -45,9 +51,9 @@ CLOCK_CUBE_LABELS = """
     904
     215
     213
--11 0-- 526 7-8
--2P A-- 402 -35
-96M M-- 48- 97-
+-11 0-- 526 8-7
+-2P A-- 402 53-
+96M M-- 48- -79
     M23
     531
     06-
@@ -114,73 +120,133 @@ def getTime():
     return hoursStr + ap + minutesStr[0] + "M" + minutesStr[1]  # AM/PM
 
 def run():
+    
+    saveMovesToFile = False  # Useful to import data into a simple viewer program
+    doForever = False
+
+
     successes = 0
     failures = 0
-
+    
     avg_opt_moves = 0.0
     avg_moves = 0.0
     avg_time = 0.0
 
+    co = CubeOrder()
+
     #C = Cube(TEST_CUBE_STR)
-    C = random_cube(CUBE_COLORS)        
+    #C = random_cube(CUBE_COLORS)        
 
     # rotate cube so we will solve the white side
-    C.orientToFront()
+    #C.orientToFront()
 
     #actualCube = random_cube(TMW_CUBE_LABELS, TMW_CUBE_LABELS, TMW_CUBE_GROUPS)
-    clockCube = Cube(CUBE_COLORS, CLOCK_CUBE_LABELS, CLOCK_CUBE_GROUPS)
-    print("starting cube:")
-    print(clockCube)
+    cube = Cube(CUBE_COLORS, CLOCK_CUBE_LABELS, CLOCK_CUBE_GROUPS, CLOCK_CUBE_GROUPS)
+    clockSolver = Solver(cube)
     
+    print("starting cube:")
+    print(cube)
+    
+    movesFile = "rubik-clock-moves.py"
+    #copyfile(movesFile, movesFile+".bak")
+
+    if saveMovesToFile:
+        f = open(movesFile, "w")
+        f.write("RUBICK_CLOCK_MOVES = {\n")
+        f.close()
+        
     hours = 0
     minutes = 0
+    totalMinutes = 0
 
-    while True:
+    while doForever or totalMinutes < 1440:
+        totalMinutes += 1
         currentTime = getTime()
         
 
         print ("------------------------------------------------------")
         if DEBUG > 0: print("Solving for: ", currentTime)
-        print ("Starting Cube: ", clockCube.flat_str())
+        
+        timeString = f"{hours}{minutes}"
+        clockCube = clockSolver.generateCubeForMessage(currentTime)
+        verifierCube1 = Cube(cube) # save for the end to verify moves are correct
+        verifierCube2 = Cube(cube) # save for the end to verify moves are correct
         clockSolver = Solver(clockCube, groups=CLOCK_CUBE_GROUPS)
+        print (f"{timeString} unsolved cube = ", clockCube)
+        unsolvedCubeState = clockCube.getDestinationColorString()
+        myState = clockCube.getDestinationString()
+        kociembaState = co.convert(myState, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
         
         start = time.time()
-        clockSolver.solveFrontString(currentTime)
+
+        clockSolver.solveFront()
         duration = time.time() - start
+
+        moves = clockSolver.getMovesString()                
+        optimizedMoves = optimize_moves(clockSolver.moves)
+        rm = RobotMoves()
+        robotMoves = rm.convert(optimizedMoves)
+        optimizedRobotMoves = rm.optimize(optimizedMoves)
         
 
-        opt_moves = optimize_moves(clockSolver.moves)
-        successes += 1
+        doKociembaOptimization = True
+        if doKociembaOptimization:
+            # this does not seem to work reliably I get this error:
+            #Error: Wrong edge and corner parity
+
+            #kociemba requires server to be running
+            # cd .../RubiksCube-TwophaseSolver
+            # python3 start_server.py 8080 20 2
+            #
+            
+            # if it is not running then stdout returns ''
+            #output = subprocess.run(["python3",
+            #    "/Users/michaelhirst/TMW/rubik/hkociemba/RubiksCube-TwophaseSolver/main.py",
+            #    kociembaInput], stdout=subprocess.PIPE).stdout.decode('utf-8')
+            #print ("kociemba output: ", output)
+            proc1 = subprocess.Popen(['echo', kociembaState], stdout=subprocess.PIPE)
+            proc2 = subprocess.Popen(['nc', 'localhost', '8080'], stdin=proc1.stdout,
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            proc1.stdout.close() # Allow proc1 to receive a SIGPIPE if proc2 exits.
+            out, err = proc2.communicate()
+            print('kociemba output: {0}'.format(out))
+            print('stderr: {0}'.format(err))
+            kMoves = out.decode('utf-8').split('(')[0]
+            print(f"{timeString} kociembe moves: {kMoves}")
         
-        if DEBUG > 0: print(clockCube)
-        if DEBUG > 0: time.sleep(1)
+            if "Error" in kMoves:
+                print ("Error from kociemba: ", kMoves)
+            elif kMoves == '':
+                print ("kocieba server not running.  Do this:")
+                print ("python3 RubiksCube-TwophaseSolver/start_server.py 8080 20 2")
+            else:
+                verifierCube2.sequence(kMoves)
+                #print (f"{timeString} verifier2 solved cube = ", verifierCube2)
+                if not verifierCube2.is_solved(currentTime):
+                    print ("kocieba failed to solve the cube correctly.")
+                else:                    
+                    kMovesList = kMoves.split(' ')
+                    optimizedRobotMoves = rm.optimize(kMovesList)
+                    #print(f"{person} k robot moves: {' '.join(optimizedRobotMoves)}")
 
-
-        if clockCube.is_solved(currentTime):
-            opt_moves = optimize_moves(clockSolver.moves)
-            print(f"{currentTime}:  {len(opt_moves)} moves: {' '.join(opt_moves)}")
-            print ("Ending Cube:   ", clockCube.flat_str())
-            successes += 1
-            avg_moves = (avg_moves * (successes - 1) + len(clockSolver.moves)) / float(successes)
-            avg_time = (avg_time * (successes - 1) + duration) / float(successes)
-            avg_opt_moves = (avg_opt_moves * (successes - 1) + len(opt_moves)) / float(successes)
-        else:
-            failures += 1
-            print(f"Failed ({successes + failures}): {clockCube.flat_str()}")
-
-        scrambleMoves = " ".join(random.choices(MOVES, k=200))
-        clockCube.sequence(scrambleMoves)
-
-    total = successes + failures
-    pass_percentage = 100 * successes / total
-
-    avg_moves = (avg_moves * (successes - 1) +
-                    len(clockSolver.moves)) / float(successes)
-    avg_time = (avg_time * (successes - 1) +
-                duration) / float(successes)
-    avg_opt_moves = (avg_opt_moves * (successes - 1) +
-                        len(opt_moves)) / float(successes)
-
+        verifierCube1.sequence(optimizedRobotMoves)
+        print (f"{timeString} verifier solved cube = ", verifierCube1)
+                
+        print(f"{timeString} robot moves:   {' '.join(optimizedRobotMoves)}\n")
+        
+        moveString = ' '.join(optimizedRobotMoves)
+        dictEntry = f'"{currentTime}":"{moveString}", '
+        
+        if saveMovesToFile:
+            f = open(movesFile, "a")
+            f.write(dictEntry + "\n")
+            f.close()
+       
+    if saveMovesToFile:     
+        f = open(movesFile, "a")
+        f.write("}\n")
+        f.close()
 
 if __name__ == '__main__':
     DEBUG = 1

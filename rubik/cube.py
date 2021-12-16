@@ -40,81 +40,7 @@ class Cube:
         -y is the DOWN direction, +y is the UP direction
         -z is the BACK direction, +z is the FRONT direction
     """
-
-    def _from_cube(self, c):
-        
-        self.faces = list()
-        self.edges = list()
-        self.corners = list()
-
-        for p in c.faces:
-            pos, colors, labels, group, destinations = p.getAttributes()
-            self.faces.append(Piece(pos=pos, colors=colors, labels=labels, group=group, destinations=destinations))
-
-        for p in c.edges:
-            pos, colors, labels, group, destinations = p.getAttributes()
-            self.edges.append(Piece(pos=pos, colors=colors, labels=labels, group=group, destinations=destinations))
-
-        for p in c.corners:
-            pos, colors, labels, group, destinations = p.getAttributes()
-            self.corners.append(Piece(pos=pos, colors=colors, labels=labels, group=group, destinations=destinations))
-
-        self.pieces = self.faces + self.edges + self.corners
-        
-        self.solvedGroups = c.solvedGroups
-        
-        assert c == self
-          
-    def _assert_data(self):
-        assert len(self.pieces) == 26
-        assert all(p.type == FACE for p in self.faces)
-        assert all(p.type == EDGE for p in self.edges)
-        assert all(p.type == CORNER for p in self.corners)
-        for p  in self.pieces:
-            colors = p.getColors()
-            assert (colors[0] or '0') != (colors[1] or '1') != (colors[2] or '2') # all stickers on a piece must have different colors
-
-    def _newPiece(self, pos, x, y, z):
-        # create a new piece
-        if x == None:
-            cx = None
-            lx = None
-            gx = None
-        else:
-            cx = self.color_str[x]
-            lx = self.labels_str[x]
-            gx = self.groups_str[x]
-            
-        if y == None:
-            cy = None
-            ly = None
-            gy = None
-        else:
-            cy = self.color_str[y]
-            ly = self.labels_str[y]
-            gy = self.groups_str[y]
-            
-        if z == None:
-            cz = None
-            lz = None
-            gz = None
-        else:
-            cz = self.color_str[z]
-            lz = self.labels_str[z]
-            gz = self.groups_str[z]
-            
-        if gx != None:
-            g = gx
-        else:
-            if gy != None:
-                g = gy
-            else:
-                g = gz
-
-        p = Piece(pos, colors=(cx, cy, cz), labels=(lx, ly, lz), group=g)
-        return p
-
-        
+     
     def __init__(self, colors, labels=None, groups=None, solvedGroups=None, backViewIsXray=False):
         """
         parameters:
@@ -288,6 +214,80 @@ class Cube:
         
         self.orientToFront()
 
+
+    def _from_cube(self, c):
+        
+        self.faces = list()
+        self.edges = list()
+        self.corners = list()
+
+        for p in c.faces:
+            pos, colors, labels, group, destinations = p.getAttributes()
+            self.faces.append(Piece(pos=pos, colors=colors, labels=labels, group=group, destinations=destinations))
+
+        for p in c.edges:
+            pos, colors, labels, group, destinations = p.getAttributes()
+            self.edges.append(Piece(pos=pos, colors=colors, labels=labels, group=group, destinations=destinations))
+
+        for p in c.corners:
+            pos, colors, labels, group, destinations = p.getAttributes()
+            self.corners.append(Piece(pos=pos, colors=colors, labels=labels, group=group, destinations=destinations))
+
+        self.pieces = self.faces + self.edges + self.corners
+        
+        self.solvedGroups = c.solvedGroups
+        
+        assert c == self
+          
+    def _assert_data(self):
+        assert len(self.pieces) == 26
+        assert all(p.type == FACE for p in self.faces)
+        assert all(p.type == EDGE for p in self.edges)
+        assert all(p.type == CORNER for p in self.corners)
+        for p  in self.pieces:
+            colors = p.getColors()
+            assert (colors[0] or '0') != (colors[1] or '1') != (colors[2] or '2') # all stickers on a piece must have different colors
+
+    def _newPiece(self, pos, x, y, z):
+        # create a new piece
+        if x == None:
+            cx = None
+            lx = None
+            gx = None
+        else:
+            cx = self.color_str[x]
+            lx = self.labels_str[x]
+            gx = self.groups_str[x]
+            
+        if y == None:
+            cy = None
+            ly = None
+            gy = None
+        else:
+            cy = self.color_str[y]
+            ly = self.labels_str[y]
+            gy = self.groups_str[y]
+            
+        if z == None:
+            cz = None
+            lz = None
+            gz = None
+        else:
+            cz = self.color_str[z]
+            lz = self.labels_str[z]
+            gz = self.groups_str[z]
+            
+        if gx != None:
+            g = gx
+        else:
+            if gy != None:
+                g = gy
+            else:
+                g = gz
+
+        p = Piece(pos, colors=(cx, cy, cz), labels=(lx, ly, lz), group=g)
+        return p
+
     def is_solved(self, message=None):
         def check(destinations):
             assert len(destinations) == 9
@@ -396,11 +396,17 @@ class Cube:
     def E2(self): self.E(); self.E()
     def S2(self): self.S(); self.S()
     
-    def sequence(self, move_str):
+    def sequence(self, moveSequence):
         """
         :param moves: A string containing notated moves separated by spaces: "L Ri U M Ui B M"
+                    Or the same but presented as a list of moves 
         """
-        moves = [getattr(self, name) for name in move_str.split()]
+        if isinstance(moveSequence, str):
+            moveList = moveSequence.split()
+        else:
+            moveList = moveSequence
+
+        moves = [getattr(self, name) for name in moveList]
         for move in moves:
             move()
 
