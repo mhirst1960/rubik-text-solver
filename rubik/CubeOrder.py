@@ -101,6 +101,37 @@ class CubeOrder:
     U4, U5, U6,
     U7, U8, U9,
     
+    R1, R2, R3,   # R3 is next to B1
+    R4, R5, R6,   # R6 is next to B4
+    R7, R8, R9,   # R9 is next to B7
+    
+    F1, F2, F3,
+    F4, F5, F6,
+    F7, F8, F9,
+    
+    D1, D2, D3,
+    D4, D5, D6,
+    D7, D8, D9,
+    
+    L1, L2, L3,
+    L4, L5, L6,
+    L7, L8, L9,
+    
+    B1, B2, B3,   # R3 is next to B1
+    B4, B5, B6,   # R6 is next to B4
+    B7, B8, B9    # R9 is next to B7
+    
+    ]
+
+    #https://github.com/hkociemba/RubiksCube-TwophaseSolver
+    KOCIEMBA_ORDER       = STICKER_GROUPS_URFDLB
+    
+    #https://github.com/dwalton76/rubiks-color-resolver
+    COLOR_RESOLVER_ORDER =  [
+    U1, U2, U3,
+    U4, U5, U6,
+    U7, U8, U9,
+    
     R1, R2, R3,
     R4, R5, R6,
     R7, R8, R9,
@@ -120,10 +151,12 @@ class CubeOrder:
     B1, B2, B3,
     B4, B5, B6,
     B7, B8, B9
-    ]
 
-    KOCIEMBA_ORDER = STICKER_GROUPS_URFDLB
+    #B3, B2, B1,
+    #B6, B5, B4,
+    #B9, B8, B7
     
+    ]
     # Other solvers represent INPUT/OUTPUT by unfolding the cube then simply reading order:
     # in top to bottom rows read left to right 
     
@@ -131,6 +164,9 @@ class CubeOrder:
     # as if unfolding a paper box and laying it down flat
     # The Back pieces retain their order as we rotate the entire cube around Z
     # Note: B7 is adjacent to R9
+    
+    #https://github.com/pglass/cube
+    
     SLICE_UNFOLD_BACK = [
                      U1, U2, U3,
                      U4, U5, U6,
@@ -156,6 +192,47 @@ class CubeOrder:
                      D4, D5, D6,
                      D7, D8, D9
     ]
+
+    #AnimCubeJS https://cubing.github.io/AnimCubeJS/animcubejs.html
+    SLICE_ANIMJS3 = [
+    U7, U8, U9,
+    U4, U5, U6,
+    U1, U2, U3,
+    
+    D1, D4, D7,
+    D2, D5, D8,
+    D3, D6, D9,
+    
+    F1, F4, F7,
+    F2, F5, F8,
+    F3, F6, F9,
+    
+    B1, B4, B7,
+    B2, B5, B8,
+    B3, B6, B9,
+    
+    L3, L2, L1,
+    L6, L5, L4,
+    L9, L8, L7,
+    
+    R1, R4, R7,
+    R2, R5, R8,
+    R3, R6, R9,
+
+    ]
+
+    animOrderLookup = [
+                   7, 8, 9,
+                   4, 5, 6,
+                   1, 2, 3,
+    39, 38, 37,   19, 22, 25,  46, 49, 52,  28, 31, 34,
+    42, 41, 40,   20, 23, 26,  47, 50, 53,  29, 32, 35,
+    45, 44, 43,   21, 24, 27,  48, 51, 54,  30, 33, 36,
+                  10, 13, 16,
+                  11, 14, 17,
+                  12, 15, 18,
+    ]
+
 
     def convert (self, cubeString, fromType, toType):
         convertedList = [None]*54

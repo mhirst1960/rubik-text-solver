@@ -14,6 +14,12 @@ FACE = 'face'
 EDGE = 'edge'
 CORNER = 'corner'
 
+RIGHT = X_AXIS = Point(1, 0, 0)
+LEFT           = Point(-1, 0, 0)
+UP    = Y_AXIS = Point(0, 1, 0)
+DOWN           = Point(0, -1, 0)
+FRONT = Z_AXIS = Point(0, 0, 1)
+BACK           = Point(0, 0, -1)
 class Solver:
 
 
@@ -65,6 +71,8 @@ class Solver:
 
         self.initCube(cube)
 
+        self.debugShowCubeAfterEveryMove = False
+        
         moves = cube.orientToFront()
         self.moves = moves.split()
 
@@ -86,7 +94,6 @@ class Solver:
         self.colors = cube.colors()
         self.stickers = cube.stickers()
 
-                    
     def solve(self):
         if DEBUG: print(self.cube)
         self.cross()
@@ -106,49 +113,110 @@ class Solver:
 
     def solveFront(self):
 
-        #print ("Cube before cross:\n", self.cube)
         self.cross()
-        #print ("after cross: ", self.cube)
         self.cross_corners()
-        #print ("after cross_corners: ", self.cube)
 
 
     def generateCubeForMessage(self, frontString):
+        #TODO: solving thee cube twice in a row should result in no moves.
+        #      if front face  piece is good as-is (blank piece == blank) use it
+        #      and no need to rotate the cube unnecessarily at the beginning for a new blank center
+        
         # start fresh.  Destinations are assigned based on front string
         self.cube.clearAllDestinations()
-        #self.cube.assignDefaultFaceDestinations()
-    
+        
+        frontGroups = self.cube.getSolvedGroups('F')
+
+        frontPiecesCopy = list()
+        for i, p in enumerate(sorted(self.cube._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))):
+            #copy everything except assign the groups in correct order
+            group = frontGroups[i]
+            frontPiecesCopy += [Piece(p.pos, p.getColors(), p.getLabels(), group, p.getDestinations())]
+            
+            
+        middleGroup = frontGroups[4]
+        middleGroupIndex = int(middleGroup) - 1
+        middleLetter = frontString[middleGroupIndex]
+        middlePiece = self.cube.findPieceByLabelAndGroupWithNoDestination(middleLetter, middleGroup, FACE)
+        if middlePiece == None:
+            middlePiece = self.cube.findPieceByLabelAndGroupWithNoDestination('-', middleGroup, FACE)
+
+        assert middlePiece is not None
+        
+        if middlePiece.pos[1] == 0:
+            # rotate around Y until piece is in front
+            for _ in range(4):
+                if middlePiece.pos == FRONT:
+                    break
+                self.move('Y')
+        else:
+            #rotate around X until piece is in front
+            for _ in range(4):
+                if middlePiece.pos == FRONT:
+                    break
+                self.move('X')
+
+        assert middlePiece.pos == FRONT
+        #Set all the face desitnations based on current cube orientation
+        #TODO not sure if we need to rotate around Y in the future for some cases.  I don't think so.
+        self.cube.assignDefaultFaceDestinations()
+        
         # each character is in a different group. find pieces that have that group and character
         futureFrontPieces = list()
         group = 1
         groupch = chr(ord('0') + group)
+        count = 0
         for labelChar in frontString:
-            labeledPiece = self.cube.findPieceByLabelAndGroupWithNoDestination(labelChar, groupch)
             
+            if groupch == middleGroup and middlePiece.getLabel(2) == labelChar:
+                labeledPiece = middlePiece
+                matched = True
+            else:
+                labeledPiece = self.cube.findPieceByLabelAndGroupWithNoDestination(labelChar, groupch)
+                matched = False
+
+            #matched = False
+
+            if groupch == middleGroup and labeledPiece == None:
+                labeledPiece = middlePiece
+                #matched = True
+                
             assert labeledPiece != None
 
-            matched = False
-
-            for p in self.cube.origionalFrontPieces:
+            #debugPieceList = list()
+            
+            #for p in sorted(self.cube._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x)):
+            #for p in self.cube.origionalFrontPieces:
+            for p in frontPiecesCopy:
                 if p.group != groupch:
                     continue
                 
                 rotated = False
                 if not matched and p.type == labeledPiece.type:
                     futureFrontPieces += [labeledPiece]
-                    labeledPiece.assignDestinationToFront(labelChar, p.pos)
+                    print (f"rotate {labelChar} to front")
+                    self.rotateLabelToFront(labelChar, labeledPiece, p.pos)
+                    count += 1
+                    #labeledPiece.assignDestinationToFront(labelChar, p.pos)
                     matched = True
                 else:
                     blankPiece = self.cube.findPieceByLabelAndGroupWithNoDestination(label='-', group=groupch, type=p.type)
                     
+                    if groupch == middleGroup and blankPiece == None:
+                        blankPiece = middlePiece
+
                     assert blankPiece != None
                     
                     futureFrontPieces += [blankPiece]
-                    blankPiece.assignDestinationToFront('-', p.pos)
-                                                             
+                    print (f"rotate - to front")
+                    self.rotateLabelToFront('-', blankPiece, p.pos)
+                    count += 1
+                    #blankPiece.assignDestinationToFront('-', p.pos)
+                print(f"{frontString}: {labelChar} Cube so far:\n", self.cube)
+                print(f"moves so far: {self.moves}")
+                
             group+=1
             groupch = chr(ord('0') + group)
-
         
         # now verify and assert that the front stickers contain the requested string
         message = ""
@@ -160,18 +228,19 @@ class Solver:
         assert m == frontString.replace("-", "")
         
         # Now assign the rest of the destinations however they might fall after solved
+        self.cube.assignDefaultDestinations()
+
+        print ("========================================")
+        print ("========================================")
+        print (f"{frontString} Cube is configured.  Solved is this: \n", self.cube)
+        self.undoAllMoves()
+
+        print (f"{frontString} Cube is configured. Unsolved is this: \n", self.cube)
+        print ("========================================")
+        print ("========================================")
         
-        tmpCube = Cube(self.cube)
-        tSolver = Solver(tmpCube)
-        tSolver.cross()
-        tSolver.cross_corners()
-        tSolver.alignToMessageOrder()
-        #print (f" {frontString} Cube solved front:\n", tmpCube)
-        tmpCube.assignDefaultDestinations()
-        tSolver.undoAllMoves()
-        #print (f" {frontString} Cube origional orientation:\n", tmpCube)
                 
-        return tmpCube
+        return self.cube
     
         """ 
         # rotate the entire cube and, if needed, assign non-front destinations
@@ -226,9 +295,13 @@ class Solver:
         message = front.replace("-", "")
         assert message == frontString.replace("-", "")
         
+    def orientToFront(self):
+        moves = self.cube.orientToFront()
+        self.moves += moves.split()
+        
     def alignToMessageOrder(self):
         """
-        rotate the cube so beginning of message is top-left and end if botto-left
+        rotate the cube so beginning of message is top-left and end if bottom-left
         Simply rotate around Z until groups are in increasing numberical order
         """
         FRONT = Point(0, 0, 1)
@@ -249,6 +322,9 @@ class Solver:
     def move(self, move_str):
         self.moves.extend(move_str.split())
         self.cube.sequence(move_str)
+        if self.debugShowCubeAfterEveryMove:
+            # For debugging, show the cube
+            print (f"after move {move_str} cube looks like this: \n", self.cube)
 
     def undoLastMove(self):
         """
@@ -267,6 +343,61 @@ class Solver:
         while len(self.moves) > 0:
             self.undoLastMove()
 
+    def rotateLabelToFront(self, labelChar, piece, destinationPosition):
+        """
+        The piece has at least one sticker labelled with labelChar.
+        Use legal cube moves to place the piece in the destinationPosition
+        such that the sticker with labelChar faces front
+        """
+                
+        labels = piece.getLabels()
+        if piece.type == FACE:
+            for i, label in enumerate(labels):
+                if label == None:
+                    continue
+                elif label == labelChar:
+                    piece.setDestination(i, 'F')
+
+        elif piece.type == EDGE:
+            
+            if destinationPosition == LEFT + FRONT:
+                self.move("Z2")
+                self.placeFrEdgeLabel(piece, labelChar)
+                self.move("Z2")
+            elif destinationPosition == RIGHT + FRONT:
+                self.placeFrEdgeLabel(piece, labelChar)
+            elif destinationPosition == UP + FRONT:
+                self.move("Z")
+                self.placeFrEdgeLabel(piece, labelChar)
+                self.move("Zi")
+            elif destinationPosition == DOWN + FRONT:
+                self.move("Zi")
+                self.placeFrEdgeLabel(piece, labelChar)
+                self.move("Z")
+                        
+        else:
+
+            if destinationPosition == LEFT + UP + FRONT:
+                self.move("Z2")
+                self.placeFrdCornerLabel(piece, labelChar)
+                self.move("Z2")
+            elif destinationPosition == RIGHT + UP + FRONT:
+                self.move("Z")
+                self.placeFrdCornerLabel(piece, labelChar)
+                self.move("Zi")
+            elif destinationPosition == LEFT + DOWN + FRONT:
+                self.move("Zi")
+                self.placeFrdCornerLabel(piece, labelChar)
+                self.move("Z")
+            elif destinationPosition == RIGHT + DOWN + FRONT:
+                self.placeFrdCornerLabel(piece, labelChar)
+
+        piece.setDestinationsFromPos()
+
+        destinations = piece.getDestinations()
+
+        print (f"piece destinations: {''.join(piece.getDestinationsNotNone())}")
+
     def cross(self):
         if DEBUG: print("cross..")
         # place the front-LEFT piece
@@ -276,6 +407,9 @@ class Solver:
         fu_piece = self.cube.findPieceByDestinations('F', 'U')
         fd_piece = self.cube.findPieceByDestinations('F', 'D')
                 
+        # "E L Ei Li" move left-back (left face) edge to left-front (front face) Basically "E" without disturbing rest of front
+        # "Ei R E Ri" move right-back (right face) edge to right-front (front face) Basically "Ei" without disturbing rest of front
+        
         self._cross_left_or_right(fl_piece, self.left_piece, self.cube.leftDestination(), "L L", "E L Ei Li")
         self._cross_left_or_right(fr_piece, self.right_piece, self.cube.rightDestination(), "R R", "Ei R E Ri")
 
@@ -318,7 +452,7 @@ class Solver:
 
         # piece is at z = -1, rotate to correct face (LEFT or RIGHT)
         
-        # rotate back layer until peice we want is aligned with its front destiny position
+        # rotate back layer until piece we want is aligned with its front destiny position
         count = 0
         while (edge_piece.pos.x, edge_piece.pos.y) != (face_piece.pos.x, face_piece.pos.y):
             self.move("B")
@@ -353,6 +487,121 @@ class Solver:
         self.move("Z")
         self.place_frd_corner(fld_piece, self.down_piece, self.left_piece, self.cube.frontDestination())
         self.move("Z")
+
+    def placeFrEdgeLabel(self, edgePiece, label):
+        # move the corner piece that has this label into position front-right-down
+        #  such that the label is oriented to the front
+
+        if (edgePiece.pos == RIGHT + FRONT):
+            if edgePiece.getLabel(2) == label:
+                #already in place.  Nothing to do.
+                return
+            else:
+                #swap orientation
+                self.move("Ri S R2 S2 Ri")
+                return
+
+        if edgePiece.pos.z == 1:
+            count = 0
+            while (edgePiece.pos.x, 0, 0) != RIGHT:
+                self.move("Z")
+                count += 1
+                assert count < 5
+            
+            # piece is in front: move to back-right
+            self.move("E B Ei Bi")
+            
+            #undo the Z moves so front and back pieces are right edge
+            for _ in range(count):
+                self.move("Zi")
+            
+        #if edgePiece z=0 move to left-down
+        if edgePiece.pos.z == 0:
+            count = 0
+            while edgePiece.pos != Point(-1, -1, 0):
+                self.move("S")
+                count += 1
+                assert count < 5
+            if edgePiece.getLabel(1) == label:
+                self.move("R S2 Ri")
+            else:
+                self.move("Ri Si R")
+            assert edgePiece.getLabel(2) == label
+            return
+        
+        count = 0
+        while (edgePiece.pos.x, 0, 0) != RIGHT:
+            self.move("B")
+            count += 1
+            assert count < 10
+
+        if edgePiece.pos.z == 1:
+            # if piece is already oriented correctly we are done!
+            if edgePiece.getLabel(2) == label:
+                return
+            # 2) if piece is in front: move to back, to back-right
+            self.move("S Di Si D")
+            
+        # z=-1 on right-bottom move to position front-right
+        # two possible moves
+        if edgePiece.getLabel(0) == label:
+            # label is on right sticker
+            self.move("B E Bi Ei")
+        else:
+            #label is on back sticker
+            self.move("E B2 Ei")
+            
+            
+    def placeFrdCornerLabel(self, cornerPiece, label):
+        # move the corner piece that has this label into position front-right-down
+        #  such that the label is oriented to the front
+                
+        if (cornerPiece.pos == LEFT + RIGHT + FRONT) and (cornerPiece.getLabel(2) == label):
+            #already in place.  Nothing to do.
+            return
+        
+        if cornerPiece.pos.z == 1:
+            count = 0
+            while (cornerPiece.pos.x, cornerPiece.pos.y, 0) != (RIGHT + DOWN):
+                self.move("Z")
+                count += 1
+                assert count < 10
+            
+            # piece is in front: move to back-right-down
+            self.move("Ri Bi R B")
+            
+            #rotate the cube back to where it was so we can solve FRD
+            for _ in range(count):
+                self.move("Zi")
+
+        # rotate piece to be directly below its destination
+        count = 0
+        while (cornerPiece.pos.x, cornerPiece.pos.y, 0) != (RIGHT + DOWN):
+            self.move("B")
+            count += 1
+            assert count < 10
+
+        if cornerPiece.pos.z == 1:
+            # if piece is already oriented correctly we are done!
+            if cornerPiece.getLabel(2) == label:
+                return
+            # if piece is in front: move to back, to back-right-down
+            self.move("Ri Bi R B")
+
+        # move into position front-right-down
+        # there are 3 possible moves:
+            # move back-right-down (right sticker) to front-right-down (front sticker) Like "L" without disturbing rest of up
+        if cornerPiece.getLabel(0) == label:
+            # move back-right-down (right sticker) to front-right-down (front sticker) Like "L" without disturbing rest of up
+            self.move("B D Bi Di")
+        elif cornerPiece.getLabel(1) == label:
+            # move back-right-down (down sticker) to front-right-down (front sticker) Like "R" without disturbing rest of front
+            self.move("Bi Ri B R")
+        else:
+            # move back-right-down (back sticker) to front-right-down (front sticker) Like taking the back corner sticker and moving to the opposite side (front)
+            self.move("Ri B B R Bi Bi D Bi Di")
+
+        
 
     def place_frd_corner(self, corner_piece, right_piece, down_piece, front_destination):
         # rotate to z = -1
@@ -390,10 +639,13 @@ class Solver:
 
         # there are three possible orientations for a corner
         if corner_piece.getDestinations()[0] == front_destination:
+            # move back-right-down (right sticker) to front-right-down (front sticker) Like "L" without disturbing rest of up
             self.move("B D Bi Di")
         elif corner_piece.getDestinations()[1] == front_destination:
+            # move back-right-down (down sticker) to front-right-down (front sticker) Like "R" without disturbing rest of front
             self.move("Bi Ri B R")
         else:
+            # move back-right-down (back sticker) to front-right-down (front sticker) Like taking the back corner sticker and moving to the opposite side (front)
             self.move("Ri B B R Bi Bi D Bi Di")
 
     def second_layer(self):

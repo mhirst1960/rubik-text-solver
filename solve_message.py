@@ -3,6 +3,9 @@
 import random
 import time
 import re
+import subprocess
+import os
+from pathlib import Path
 
 from rubik import solve
 from rubik.cube import Cube
@@ -11,6 +14,8 @@ from rubik.solve import Solver
 from rubik.optimize import optimize_moves
 from rubik.RobotMoves import RobotMoves
 from TmwSolvedCubes import tmwCubes
+from rubik.CubeWebpage import CubeWebpage
+from rubik.CubePrintStyles import CubePrintStyles
 
 
 CUBE_COLORS = """
@@ -26,13 +31,13 @@ GGG WWW BBB YYY
 """
 
 # pieces labeled with any character.  "-" means no label or None
-TMW_CUBE_LABELS_XRAY = """
+TMW_CUBE_LABELS_UNFOLD = """
     CEK
     B-L
     D-S
 J-L -T- --M ---
 ANJ -M- NVL Z--
---T -W- H-S ---
+--T -W- HS- ---
     LGG
     -E-
     --M
@@ -53,7 +58,7 @@ TMW_CUBE_GROUPS = """
 
 
 TMW_PEOPLE = [
-    "TMW",  # The Mad Wrapper
+    #"TMW",  # The Mad Wrapper
     
     "DEH",  # Don
     "LMH",  # Linnea
@@ -73,7 +78,7 @@ TMW_PEOPLE = [
     "LEG",  # Lily
     
     "SMT", # Steph
-    "MAL", # Steph's wife
+    "MAL", # Michelle
 
 ]
 
@@ -196,7 +201,7 @@ NULL_MOVES = [
         'S2 S2'          
 ]
 
-def random_cube(solvedString=CUBE_COLORS, labels=TMW_CUBE_LABELS_XRAY, groups=TMW_CUBE_GROUPS):
+def random_cube(solvedString=CUBE_COLORS, labels=TMW_CUBE_LABELS_UNFOLD, groups=TMW_CUBE_GROUPS):
     """
     :return: A new scrambled Cube
     """
@@ -211,7 +216,7 @@ def random_cube(solvedString=CUBE_COLORS, labels=TMW_CUBE_LABELS_XRAY, groups=TM
 
     return a
 
-def easy_cube(solvedString=CUBE_COLORS, labels=TMW_CUBE_LABELS_XRAY, groups=TMW_CUBE_GROUPS, moves="B"):
+def easy_cube(solvedString=CUBE_COLORS, labels=TMW_CUBE_LABELS_UNFOLD, groups=TMW_CUBE_GROUPS, moves="B"):
     """
     :return: A new Cube that has been moved using moves
     """
@@ -227,6 +232,16 @@ def easy_cube(solvedString=CUBE_COLORS, labels=TMW_CUBE_LABELS_XRAY, groups=TMW_
 
     return a
 
+def getColorString(destinationsString):
+    # if string is cube state not colors, convert to colors
+    allowed = set('UDFBLR')
+    if set(destinationsString) <= allowed:
+        tbl = {'U':'O','D':'R','F':'W','B':'Y','L':'G','R':'B'}
+        l = list(destinationsString)
+        for i,d in enumerate(l):
+            l[i] = tbl[l[i]]
+        destinationsString = ''.join(l)
+    return destinationsString
 
 def run():
     successes = 0
@@ -237,18 +252,20 @@ def run():
     avg_moves = 0.0
     avg_time = 0.0
 
+    co = CubeOrder()
+
     # testing robot moves    
     if False:
         robotMoves = RobotMoves()
-        a = Cube(CUBE_COLORS, TMW_CUBE_LABELS_XRAY, TMW_CUBE_GROUPS)
+        a = Cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
         print ("Initial cube: ", a)
         for move in ALL_MOVES:
             print ("################### Move: ", move)
-            a = Cube(CUBE_COLORS, TMW_CUBE_LABELS_XRAY, TMW_CUBE_GROUPS)
+            a = Cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
             a.orientToFront()
-            b = Cube(CUBE_COLORS, TMW_CUBE_LABELS_XRAY, TMW_CUBE_GROUPS)
+            b = Cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
             b.orientToFront()
-            c = Cube(CUBE_COLORS, TMW_CUBE_LABELS_XRAY, TMW_CUBE_GROUPS)
+            c = Cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
             c.orientToFront()
             solverA = Solver(a, groups=TMW_CUBE_GROUPS)
             solverB = Solver(b, groups=TMW_CUBE_GROUPS)
@@ -271,9 +288,9 @@ def run():
             
     if False:
         # testing moves that return back to origional configuration
-        a = Cube(CUBE_COLORS, TMW_CUBE_LABELS_XRAY, TMW_CUBE_GROUPS)
-        b = Cube(CUBE_COLORS, TMW_CUBE_LABELS_XRAY, TMW_CUBE_GROUPS)
-        initialCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_XRAY, TMW_CUBE_GROUPS)
+        a = Cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
+        b = Cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
+        initialCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
         print ("Initial cube: ", a)
         for move in NULL_MOVES:
             print ("################### Move: ", move)
@@ -288,13 +305,13 @@ def run():
     if False:
         # convert to various cube notations
         co = CubeOrder()
-        xray = re.sub(r'\s+', '', TMW_CUBE_LABELS_XRAY)
-        #xray = ''.join(TMW_CUBE_LABELS_XRAY.strip())
-        unfoldBack = co.convert(xray, co.SLICE_XRAYBACK, co.SLICE_UNFOLD_BACK)
-        kociembaInput = co.convert(xray, co.SLICE_XRAYBACK, co.KOCIEMBA_ORDER)
-        print (f"xray        = \"\"\"\n{xray}\n\"\"\"")
+        unwrapState = re.sub(r'\s+', '', TMW_CUBE_LABELS_UNFOLD)
+        #xray = ''.join(TMW_CUBE_LABELS_UNFOLD.strip())
+        unfoldBack = co.convert(unwrapState, co.SLICE_XRAYBACK, co.SLICE_UNFOLD_BACK)
+        kociembaState = co.convert(unwrapState, co.SLICE_XRAYBACK, co.KOCIEMBA_ORDER)
+        print (f"xray        = \"\"\"\n{unwrapState}\n\"\"\"")
         print (f"unfold back = \"\"\"\n{unfoldBack}\n\"\"\"")
-        print (f"kociemba    = \"\"\"\n{kociembaInput}\n\"\"\"")
+        print (f"kociemba    = \"\"\"\n{kociembaState}\n\"\"\"")
         
 
     # test all combos of solving from any person to different person
@@ -314,16 +331,16 @@ def run():
                 solver.solve()
                 print (f"{toName} To after solved: \n", cube)
                 #cube.alignToColors(toParams["colors"])
-                xray = cube.flat_str()
-                kociembaInput = co.convert(xray, co.SLICE_XRAYBACK, co.KOCIEMBA_ORDER)
-                print (f"{toName} xray     = \"\"\"\n{xray}\n\"\"\"")
-                print (f"{toName} kociemba = \"\"\"\n{kociembaInput}\n\"\"\"")
+                unwrapState = cube.flat_str()
+                kociembaState = co.convert(unwrapState, co.SLICE_XRAYBACK, co.KOCIEMBA_ORDER)
+                print (f"{toName} xray     = \"\"\"\n{unwrapState}\n\"\"\"")
+                print (f"{toName} kociemba = \"\"\"\n{kociembaState}\n\"\"\"")
         
         
     # test align to colors
     if False:
         for i in range(100):
-            randomCube = random_cube(CUBE_COLORS, TMW_CUBE_LABELS_XRAY, TMW_CUBE_GROUPS)
+            randomCube = random_cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
             colors = randomCube.getColors()
             print ("colors: ", ''.join(colors))
             cube = Cube(colors)
@@ -333,7 +350,7 @@ def run():
 
     # generate some python output for a solved cube customized for each person
     if False:        
-        analysisCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_XRAY, TMW_CUBE_GROUPS)
+        analysisCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
         
         print ("\"\"\"")
         print ("TmwSolved Cubes\n\n")
@@ -352,7 +369,7 @@ def run():
             print ("   RBL")
         print ("\"\"\"")
         
-        print (f"CUBE_LABELS_COLOR_SOLVED = \"\"\"\n{TMW_CUBE_LABELS_XRAY}\n\"\"\"")
+        print (f"CUBE_LABELS_COLOR_SOLVED = \"\"\"\n{TMW_CUBE_LABELS_UNFOLD}\n\"\"\"")
         print (f"CUBE_GROUPS_COLOR_SOLVED = \"\"\"\n{TMW_CUBE_GROUPS}\n\"\"\"")
         print (f"CUBE_COLORS_COLOR_SOLVED = \"\"\"\n{CUBE_COLORS}\n\"\"\"")
 
@@ -397,7 +414,7 @@ def run():
         kociembaMoves = "U2 F3 R2 B3 D2 F2 D2 R2 F1 R2 U1 L1 B1 U2 L3 F2 U3 L1 B2 D1"
         person = "DJH"
         
-        referenceCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_XRAY, TMW_CUBE_GROUPS)
+        referenceCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
         cCube = Cube(inputColors)
         cCube.assignSecondaryAttributes(referenceCube)
         print(f"{person} starting cube:", cCube)
@@ -414,12 +431,73 @@ def run():
         print("Kociemba moves: ", solver.getMovesString())
         print(f"{person} kociemba {kociembaMoves}\nsolved cube:", cCube)
         
-    if False:
+    if True:
+        # test bugs in specific configurations
+        
+        person = "MAL"
+        labels = "-N---B--JHAM-JC-----G----NS-MZLV-L---W-LEMK--SGDTE-TL-"
+        colors = "FRBBUURFLRLDBLUBLDLFDDBBDLRDFBRRLDURFFFLURURFUDUFDBLUB"
+        groups = "323221321323321113323323323322223311131111113131121311"
+        
+        person = "LMH"
+        labels = "G---N-L-M-J-DN--E---H--B-E-LMA----TCJZ-MST-WS-LK-V--GL"
+        colors = "DDDFLBLFDFLFURBRULBLRBBULDRUFLBUDRFULBBRRLFFUBRUURDFDD"
+        groups = "333221123321123313333321121122223111121133331121123133"
+
+        # This CAM fails kociemba because center pieces are solved to wrong orientation
+        person = "CAM"
+        labels = "--G-E-K-T--M-BL--H-JM-MZLNS--L-VEJGS-NLDT--AC---W-----"
+        colors = "RFDDDBULLBLRBUDFDRFLDBFBRLRDBURRULDURRLUFDBLUFFFFUUBBL"
+        groups = "323323113331113333323122223321121131121113321121321123"
+
+        #colors = CUBE_COLORS
+        #labels = TMW_CUBE_LABELS_UNFOLD
+        #groups = TMW_CUBE_GROUPS
+        
+        print("Bug check solving for: ", person)
+        colors = getColorString(colors)
+        cube = Cube(colors, labels, groups, TMW_CUBE_GROUPS)
+        #cube.setPrintStyle(CubePrintStyles.DestinationGroupColored)
+        cubeSolver = Solver(cube)
+        #cubeSolver.debugShowCubeAfterEveryMove = True
+        print (f"{person} initial cube cube = ", cube)
+        personCube = cubeSolver.generateCubeForMessage(person)
+        print (f"{person} unsolved cube = ", personCube)
+
+        unsolvedCubeString = personCube.colorString()
+        unsolvedCubeState = personCube.getDestinationColorString()
+        
+        unwrapState = personCube.getDestinationString()
+        print (f"{person} state    = \"{unwrapState}\"")
+        peopleSolver = Solver(personCube)
+        peopleSolver.solveFront()
+        print (f"{person} solved front = ", personCube)
+        
+        frontString = personCube.getFrontString()
+        print ("Solved front string: ", frontString)
+    
+        assert personCube.is_solved(frontString)
+        assert personCube.getFrontString() == person
+        
+        
+        moves = peopleSolver.getMovesString()                
+        optimizedMoves = optimize_moves(peopleSolver.moves)
+        rm = RobotMoves()
+        robotMoves = rm.convert(optimizedMoves)
+        optimizedRobotMoves = rm.optimize(optimizedMoves)
+                        
+        print ("moves: ", peopleSolver.getMovesString())
+        print (f"{person} solved cube = ", personCube)
+        
+        frontString = personCube.getFrontString()
+        print ("Solved front string: ", frontString)
+        assert personCube.getFrontString() == person
+                
+    if True:
         # generate kociemba orientations for cubes based on a person
         people = TMW_PEOPLE
-        co = CubeOrder()
 
-        for t in range(1):
+        for t in range(1000):
             if DEBUG: print ("=============== test loop ", t, " =====================")
             #random.shuffle(people)
             for person in people:
@@ -429,31 +507,112 @@ def run():
                 if DEBUG > 0: print("Solving for: ", person)
 
                 
-                cube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_XRAY, TMW_CUBE_GROUPS)
+                #cube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
+                cube = random_cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
+                #cube.setPrintStyle(CubePrintStyles.DestinationGroupColored)
+                verifierCube = Cube(cube) # save for the end to verify moves are correct
+                verifierCube2 = Cube(cube) # save for the end to verify moves are correct
                 cubeSolver = Solver(cube)
                 personCube = cubeSolver.generateCubeForMessage(person)
+                #earlyMoves = personCube.orientToFront() # kociemba requires cube proper orientation
                 print (f"{person} unsolved cube = ", personCube)
-                xray = personCube.getDestinationString()
-                kociembaInput = co.convert(xray, co.SLICE_XRAYBACK, co.KOCIEMBA_ORDER)
-                #print (f"{person} xray     = \"{xray}\"")
-                print (f"{person} kociemba = \"{kociembaInput}\"")
-                #peopleSolver = Solver(cube)
-                #peopleSolver.solveFrontString(person)
-                #print (f"{person} solved cube = ", personCube)
+                
+                unsolvedCubeString = personCube.colorString()
+                unsolvedCubeState = personCube.getDestinationColorString()
+                
+                unwrapState = personCube.getDestinationString()
+                kociembaState = co.convert(unwrapState, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
+                print (f"{person} state    = \"{unwrapState}\"")
+                print (f"{person} kociemba = \"{kociembaState}\"")
+                peopleSolver = Solver(personCube)
+                peopleSolver.solveFront()
+                
+                moves = peopleSolver.getMovesString()                
+                optimizedMoves = optimize_moves(peopleSolver.moves)
+                rm = RobotMoves()
+                robotMoves = rm.convert(optimizedMoves)
+                optimizedRobotMoves = rm.optimize(optimizedMoves)
+                                
+                print ("moves: ", peopleSolver.getMovesString())
+                print (f"{person} solved cube = ", personCube)
+                assert personCube.is_solved(person)
+                assert personCube.getFrontString() == person.replace("-", "") # same as is_solved()
 
+                doKociembaOptimization = True
+                if doKociembaOptimization:
+                    # this does not seem to work reliably I get this error:
+                    #Error: Wrong edge and corner parity
+
+                    #kociemba requires server to be running
+                    # cd .../RubiksCube-TwophaseSolver
+                    # python3 start_server.py 8080 20 2
+                    #
+                    
+                    # if it is not running then stdout returns ''
+                    #output = subprocess.run(["python3",
+                    #    "/Users/michaelhirst/TMW/rubik/hkociemba/RubiksCube-TwophaseSolver/main.py",
+                    #    kociembaInput], stdout=subprocess.PIPE).stdout.decode('utf-8')
+                    #print ("kociemba output: ", output)
+                    proc1 = subprocess.Popen(['echo', kociembaState], stdout=subprocess.PIPE)
+                    proc2 = subprocess.Popen(['nc', 'localhost', '8080'], stdin=proc1.stdout,
+                                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                    proc1.stdout.close() # Allow proc1 to receive a SIGPIPE if proc2 exits.
+                    out, err = proc2.communicate()
+                    print('kociemba output: {0}'.format(out))
+                    print('stderr: {0}'.format(err))
+                    kMoves = out.decode('utf-8').split('(')[0]
+                    print(f"{person} kociembe moves: {kMoves}")
+                
+                    if "Error" in kMoves:
+                        print ("Error from kociemba: ", kMoves)
+                    elif kMoves == '':
+                        print ("kocieba server not running.  Do this:")
+                        print ("python3 RubiksCube-TwophaseSolver/start_server.py 8080 20 2")
+                    else:
+                        verifierCube2.sequence(kMoves)
+                        print (f"{person} verifier2 solved cube = ", verifierCube2)
+                        if not verifierCube2.is_solved(person):
+                            #TODO I think need to rotate cube so front piece is in front
+                            print ("kocieba failed to solve the cube correctly.")
+                        else:                    
+                            kMovesList = kMoves.split(' ')
+                            optimizedRobotMoves = rm.optimize(kMovesList)
+                            #print(f"{person} k robot moves: {' '.join(optimizedRobotMoves)}")
+
+                print(f"{person} robot moves:   {' '.join(optimizedRobotMoves)}\n")
+                #TODO kociemba uses fewer moves but is not quite working.  someday use this
+                subtitle = f"Cube for {person}"
+                home = str(Path.home())
+                htmlPath = home + "/cubeviewer"
+                if not os.path.exists(htmlPath):
+                    os.mkdir(htmlPath)
+                html = CubeWebpage(htmlPath,
+                                    cubeColors=unsolvedCubeString,
+                                    cubeState=unsolvedCubeState,
+                                    cubeMoves=robotMoves,
+                                    subTitle=subtitle)
+                html.generateHTML()
+                
+                verifierCube.sequence(optimizedRobotMoves)
+                print (f"{person} verifier solved cube = ", verifierCube)
+
+                assert verifierCube.is_solved(person)
+                
+                print("------------------------------------")
         
-    if True:
+    if False:
 
-        analysisCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_XRAY, TMW_CUBE_GROUPS)
-        realCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_XRAY, TMW_CUBE_GROUPS)
-        realCubeOpt = Cube(CUBE_COLORS, TMW_CUBE_LABELS_XRAY, TMW_CUBE_GROUPS)
-        robotCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_XRAY, TMW_CUBE_GROUPS)
-        robotCubeOpt = Cube(CUBE_COLORS, TMW_CUBE_LABELS_XRAY, TMW_CUBE_GROUPS)
+        analysisCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
+        realCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
+        realCubeOpt = Cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
+        robotCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
+        robotCubeOpt = Cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
 
 
         people = TMW_PEOPLE
 
-        for t in range(100):
+        for t in range(1):
             if DEBUG: print ("=============== test loop ", t, " =====================")
             #random.shuffle(people)
             for person in people:
