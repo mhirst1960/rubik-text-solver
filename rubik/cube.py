@@ -714,7 +714,7 @@ class Cube:
         message = front.replace("-", "")
         return message
         
-    def assignSecondaryAttributes(self, cube):
+    def assignSecondaryAttributesFromCube(self, cube):
         """
         Assuming colors and positions are correct for all pieces, assign new values from cube passed in.
         Assign labels and groups to self from argument
@@ -726,6 +726,8 @@ class Cube:
             p.assignSecondaryAttributes(piece)
             
         self.frontGroups = cube.frontGroups
+        self.groups_str = cube.groups_str
+        self.solvedGroups = cube.solvedGroups
         
         if False:  # TODO delete unused origionalFrontPieces
             self.origionalFrontPieces = list()
