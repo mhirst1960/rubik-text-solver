@@ -49,7 +49,7 @@ GGG WWW BBB YYY
 CUBE_COLOR_STRING = "OOOOOOOOOGGGWWWBBBYYYGGGWWWBBBYYYGGGWWWBBBYYYRRRRRRRRR"
 
 # pieces labeled with any character.  "-" means no label or None
-TMW_CUBE_LABELS_UNFOLD = """
+TMW_CUBE_LABELS = """
     CEK
     B-L
     D-S
@@ -135,7 +135,7 @@ def run():
         inputColors = inputColors.rstrip()
         assert len(inputColors) == 54
     
-    referenceCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
+    referenceCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS, TMW_CUBE_GROUPS, TMW_CUBE_GROUPS)
     if DEBUG > 1: print (f"Initial reference cube: \n", referenceCube)
 
     co = CubeOrder()
@@ -164,7 +164,7 @@ def run():
     #TODO for debug only
     #cCube.setPrintStyle(CubePrintStyles.DestinationGroupColored)
 
-    cCube.assignSecondaryAttributes(referenceCube)
+    cCube.assignSecondaryAttributesFromCube(referenceCube)
     
     if DEBUG > 1: print("new cube: \n", cCube)
     cubeSolver = Solver(cCube)

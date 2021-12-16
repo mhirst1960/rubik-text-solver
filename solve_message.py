@@ -344,7 +344,7 @@ def run():
             colors = randomCube.getColors()
             print ("colors: ", ''.join(colors))
             cube = Cube(colors)
-            cube.assignSecondaryAttributes(randomCube)
+            cube.assignSecondaryAttributesFromCube(randomCube)
             print ("aligned cube: ", cube)
 
 
@@ -416,7 +416,7 @@ def run():
         
         referenceCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS_UNFOLD, TMW_CUBE_GROUPS)
         cCube = Cube(inputColors)
-        cCube.assignSecondaryAttributes(referenceCube)
+        cCube.assignSecondaryAttributesFromCube(referenceCube)
         print(f"{person} starting cube:", cCube)
         solver = Solver(cCube)
         solver.move(noviceMoves)
@@ -424,7 +424,7 @@ def run():
         print(f"{person} Novice {noviceMoves}\nsolved cube:", cCube)
 
         cCube = Cube(inputColors)
-        cCube.assignSecondaryAttributes(referenceCube)
+        cCube.assignSecondaryAttributesFromCube(referenceCube)
         #cCube.sequence(kociembaMoves)
         solver = Solver(cCube)
         solver.move(kociembaMoves)
