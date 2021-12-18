@@ -45,10 +45,21 @@ personLookup = {
     
     796062774301:"SMT", # 26 Steph
     248336806937:"MAL", # 27 Michelle
+    
+
+    # blue tags work better
+        
+    185921132020:"MNH"
 }
 
 def abortAll():
+    
+    global cubeStateProcess
+    
     print ("abort all actions")
+
+    #cubeStateProcess.terminate()
+    
     #kill -9 pid
     #p = psutil.Process(pid)
     #p.terminate()  #or p.kill()
@@ -63,14 +74,24 @@ def cradlegrippers():
     output = subprocess.run(["cradle.py",], stdout=subprocess.PIPE).stdout.decode('utf-8')
     
 def getCubeState():
-    print ("Using camera  to get current cube state")
+    global cubeStatePid
     
+    print ("Using camera  to get current cube state")
+    #output = subprocess.run(["getcubestate.py",], stdout=subprocess.PIPE).stdout.decode('utf-8')
+    #process = subprocess.Popen(path + ' > /dev/null 2> /dev/null &', shell=True)
+    cubeStateProcess = subprocess.Popen(["getcubestate.py",], stdout=subprocess.PIPE)
+    #cubeStatePid = cubeStateProcess.pid
+
 def solve(person=None):
     if DEBUG >0: print("solve")
     if person == None:
         print("solve normal cube")
     else:
         if DEBUG >1: print ("Solve for person: ", person)
+        #solverStateProcess = subprocess.Popen(["tmwrubik.py","--person", person,
+        #                                       "-vv", "--simulation",
+        #                                       "--input", "file", "--infile", "~/cubestate.txt"],
+        #                                      stdout=subprocess.PIPE)
     
 functionLookup = {
     363899372860:opengrippers,
@@ -90,6 +111,8 @@ def readerLoop():
 
         while True:
 
+            handledId = False
+            
             id, text = reader.read()
             if DEBUG >0: print("id: ", id)
             #print("id type: ", type(id))
@@ -97,9 +120,14 @@ def readerLoop():
                 
             if id in personLookup.keys():
                 solvePerson(personLookup[id])
+                handledId = True
 
             if id in functionLookup.keys():
                 functionLookup[id]()
+                handledId = True
+                
+            if not handledId:
+                print("id: ", id)
                 
             sleep(2)
 
