@@ -8,7 +8,7 @@ You can also use it to solve the full cube in the normal fashon based on the col
 
 It is implemented using Python 3.
 
-The code is based on "Python Rubik's cube solver" https://github.com/pglass/cube .  Where I used the math transforms as-is
+The solver is based on "Python Rubik's cube solver" https://github.com/pglass/cube .  Where I used the math transforms as-is
 and I used fundimantal solving algorithm design.  But I refactored the code fairly significantly allowing extra attributes
 for a piece beyond just it's colors.  And added a bunch of extra functionality to manipulate the cube based on labels decorated
 with letters.
@@ -19,6 +19,20 @@ It contains:
 - A solver that follows a fixed algorithm
 - An unintelligent solution sequence optimizer
 - A decent set of test cases
+
+## Other cool things I use in this project
+
+This is a nice optimize solver I make calls to:
+https://github.com/hkociemba/RubiksCube-TwophaseSolver
+
+A nice javascript cube view I found useful:
+https://cubing.github.io/AnimCubeJS/animcubejs.html#introduction
+
+This color resolver totally saved me from a ton of work generating a cube from camera images:
+https://github.com/dwalton76/rubiks-color-resolver
+
+A nice web server I use for the webpage:
+https://bottlepy.org/docs/dev/index.html
 
 ## Installation
 
