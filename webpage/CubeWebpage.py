@@ -13,7 +13,7 @@ from bottle import static_file
 
 
 class CubeWebpage:
-
+#TODO these should be moved to template files
     HTML_HEADER = '''
     <!DOCTYPE html>
 <html>
@@ -77,7 +77,7 @@ class CubeWebpage:
     rubikWarningColors = {'green':'#558055', 'red':'#ff5555', 'blue':'#8888FF', 'orange':'#FFA588', 'white':'#ffffe0', 'yellow':'#ffff80', 'grey':'#a9a9a9',
                     'G':'#558055', 'R':'#ff5555', 'B':'#8888FF', 'O':'#FFA588', 'W':'#ffffe0', 'Y':'#ffff80', 'X':'#a9a9a9'}
     rubikSpectrum = [rubikColors['green'], rubikColors['red'], rubikColors['blue'], rubikColors['orange'], rubikColors['white'], rubikColors['yellow']]
-    #editColorDropdownStateLookup  = {0:'L', 1:'D', 2:'R', 3:'U', 4:'F', 5:'B'}
+    editColorDropdownStateLookup  = {0:'L', 1:'D', 2:'R', 3:'U', 4:'F', 5:'B'}
     editColorDropdownColorLookup  = {0:'G', 1:'R', 2:'B', 3:'O', 4:'W', 5:'Y'}
 
     def isColorBad(self, color):
@@ -227,15 +227,15 @@ class CubeWebpage:
         elif face == 'up':
             cubeColors = cs[:9]
         elif face == 'left':
-            cubeColors = cs[9:12] + cs[21:24] +cs[33:36]
+            cubeColors = cs[36:45]
         elif face == 'front':
-            cubeColors = cs[12:15] + cs[24:27] +cs[36:39]
+            cubeColors = cs[18:27]
         elif face == 'right':
-            cubeColors = cs[15:18] + cs[27:30] + cs[39:42]
+            cubeColors = cs[9:18]
         elif face == 'back':
-            cubeColors = cs[18:21] + cs[30:33] + cs[42:45]
-        elif face == 'down':
             cubeColors = cs[45:54]
+        elif face == 'down':
+            cubeColors = cs[27:36]
         else:
             assert False # unsupported face name
         
@@ -243,46 +243,41 @@ class CubeWebpage:
     
     def setStickerState(self, face, stickerIndex, colorIndex):
         
-        cs = list(self.cubeSate)
+        cs = list(self.getCubeStateColors())
+        #cs = list(self.cubeSate)
         
         newColor = self.editColorDropdownColorLookup[colorIndex]
+        #newColor = self.editColorDropdownStateLookup[colorIndex]
         
         if face == 'up':
             faceColors = cs[:9]
             faceColors[stickerIndex] = newColor
             cs[:9] = faceColors
         elif face == 'left':
-            faceColors = cs[9:12] + cs[21:24] + cs[33:36]
+            faceColors = cs[36:45]
             faceColors[stickerIndex] = newColor
-            cs[9:12] = faceColors[:3]
-            cs[21:24] = faceColors[3:6]
-            cs[33:36] = faceColors[-3:]
+            cs[36:45] = faceColors
         elif face == 'front':
-            faceColors = cs[12:15] + cs[24:27] + cs[36:39]
+            faceColors = cs[18:27]
             faceColors[stickerIndex] = newColor
-            cs[12:15] = faceColors[:3]
-            cs[24:27] = faceColors[3:6]
-            cs[36:39] = faceColors[-3:]
+            cs[18:27] = faceColors
         elif face == 'right':
-            faceColors = cs[15:18] + cs[27:30] + cs[39:42]
+            faceColors = cs[9:18]
             faceColors[stickerIndex] = newColor
-            cs[15:18] = faceColors[:3]
-            cs[27:30] = faceColors[3:6]
-            cs[39:42] = faceColors[-3:]
+            cs[9:18] = faceColors
         elif face == 'back':
-            faceColors = cs[18:21] + cs[30:33] + cs[42:45]
-            faceColors[stickerIndex] = newColor
-            cs[18:21] = faceColors[:3]
-            cs[30:33] = faceColors[3:6]
-            cs[42:45] = faceColors[-3:]
-        elif face == 'down':
             faceColors = cs[45:54]
             faceColors[stickerIndex] = newColor
             cs[45:54] = faceColors
+        elif face == 'down':
+            faceColors = cs[27:36]
+            faceColors[stickerIndex] = newColor
+            cs[27:36] = faceColors
         else:
             return 'X'
             
-        self.cubeSate = ''.join(cs)
+        self.setCubeState(''.join(cs))
+        #self.cubeSate = ''.join(cs)
         
         return newColor
 
