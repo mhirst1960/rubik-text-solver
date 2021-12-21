@@ -31,6 +31,35 @@ cubepage = CubeWebpage()
 home = str(Path.home())
 cubeStateFile = home + '/cubestate.txt'
 
+personDecoder = {
+    "TMW":"TMW",  # The Mad Wrapper
+    
+    "kind ramanujan":       "DEH",  # Don
+    "quirky banach":        "LMH",  # Linnea
+    "dazzling panini":      "EVH",  # Eric
+    "competent ardinghelli":"JZH",  # Julie Howe
+    "objective mirzakhani": "CAM",  # Caroline
+
+    "relaxed kepler":       "C-M",  # Chris
+    "zen neumann":          "SJG",  # Sandy
+    "elated hawking":       "DAG",  # David
+    "pedantic wright":      "MNH",  # Mike
+    "hungry benz":          "DJH",  # Diane
+    "optimistic saha":      "SJS",  # Steven
+    "objective sammet":     "KLH",  # Kristin
+    "dazzling nobel":       "DVG",  # Dan
+    "eloquent joliot":      "BNG",  # Briana
+    "eager hermann":        "LEG",  # Lily
+    
+    "amazing hypatia":      "SMT", # Steph
+    "wizardly shockley":    "MAL", # Michelle
+}
+
+def decodeCodeName(codeName):
+    if codeName in personDecoder:
+        return personDecoder[codeName]
+    else:
+        return ""
 
 @route('/static/<filename>')
 def server_static(filename):
@@ -66,6 +95,24 @@ def do_cube():
         getCubeStatePid = None
         process_getcubestate = None
         print ("Done getting cube state.")
+    
+    def do_solveit(person):
+        global solveitPid
+        global process_solveit
+        
+        if simulation:
+            process_solveit = subprocess.Popen(["sleep","10"], stdout = subprocess.PIPE)
+        else:
+            try:
+                process_solveit = subprocess.Popen(["tmwrubik.py","--person", person, "-vv", "--simulation", "--input", "file", "--infile", "~/cubestate.txt"], stdout = subprocess.PIPE)
+            except:
+                cubepage.setMessage("Error attempting to access camera or robot")
+                return cubepage.renderPage()
+        getCubeStatePid = process_solveit.pid
+        out, err = process_solveit.communicate()
+        solveitPid = None
+        process_solveit = None
+        print ("Done solving the cube.")
     
     editAction = request.forms.get('cube-TMW')
 
@@ -115,16 +162,18 @@ def do_cube():
         return "<p>Inspecting Cube now.</p>"
     elif action == 'solve':
         cubepage.saveCubeState()
-        person = request.forms.get('solve')
+        codeName = request.forms.get('solve')
+        if codeName != "":
+            person = decodeCodeName(codeName)
+        else:
+            person = ""
+        #person = request.forms.get('solve')
         if person != "":
-            if simulation:
-                output = subprocess.run(["sleep","30"], stdout=subprocess.PIPE).stdout.decode('utf-8')
-            else:
-                output = subprocess.run(["sleep","30"], stdout=subprocess.PIPE).stdout.decode('utf-8')
-
+            thread = Thread(target=do_solveit)
+            thread.start()
             cubepage.setMessage(f"Solving cube for {person}")
         else:
-            cubepage.setMessage("Error: unknown command")
+            cubepage.setMessage("Nope. Thats not a good name: " + codeName)
     elif action == 'reloadcubestate':
         cubepage.loadCubeState(cubeStateFile)
         cubepage.setMessage(f"refreshed the cube")
