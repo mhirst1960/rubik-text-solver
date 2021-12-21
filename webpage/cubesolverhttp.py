@@ -15,7 +15,7 @@ from bottle import static_file
 
 from CubeWebpage import CubeWebpage
 
-simulation=True
+simulation=False  # use --simulation to disable using camera and robot
 
 cubeState = ''
 getCubeStatePid = None
@@ -56,7 +56,11 @@ def do_cube():
         if simulation:
             process_getcubestate = subprocess.Popen(["sleep","30"], stdout = subprocess.PIPE)
         else:
-            process_getcubestate = subprocess.Popen(["getcubestate.py",], stdout = subprocess.PIPE)
+            try:
+                process_getcubestate = subprocess.Popen(["getcubestate.py",], stdout = subprocess.PIPE)
+            except:
+                cubepage.setMessage("Error attempting to access camera or robot")
+                return cubepage.renderPage()
         getCubeStatePid = process_getcubestate.pid
         out, err = process_getcubestate.communicate()
         getCubeStatePid = None
@@ -82,14 +86,23 @@ def do_cube():
         if simulation:
             output = subprocess.run(["sleep","10"], stdout=subprocess.PIPE).stdout.decode('utf-8')
         else:
-            output = subprocess.run(["opengrippers.py",], stdout=subprocess.PIPE).stdout.decode('utf-8')
+            try:
+                output = subprocess.run(["opengrippers.py",], stdout=subprocess.PIPE).stdout.decode('utf-8')
+            except:
+                cubepage.setMessage("Error attempting to open grippers")
+                return cubepage.renderPage()
+            
         cubepage.setMessage("Open")
         return cubepage.renderPage()
     elif action == 'cradle':
         if simulation:
             output = subprocess.run(["sleep","10"], stdout=subprocess.PIPE).stdout.decode('utf-8')
         else:
-            output = subprocess.run(["cradle.py",], stdout=subprocess.PIPE).stdout.decode('utf-8')
+            try:
+                output = subprocess.run(["cradle.py",], stdout=subprocess.PIPE).stdout.decode('utf-8')
+            except:
+                cubepage.setMessage("Error attempting to cradle grippers")
+                return cubepage.renderPage()
         cubepage.setMessage("Cradle")
         return cubepage.renderPage()
     elif action == 'camera':
@@ -122,8 +135,21 @@ def do_cube():
 
     return cubepage.renderPage()
 
-
+def parseArgs():
     
+    global simulation
+    
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument('--simulation', dest='simulation', action='store_true', help="do not use the camera or robot. Generate webpage and update state file when done.")
+
+    args = parser.parse_args()
+    
+    if args.simulation:
+        simulation = True
+    
+parseArgs()
+
 run(host='localhost', port=18080,
 #    reloader=True  #debugging: to refresh when source changes
     )
