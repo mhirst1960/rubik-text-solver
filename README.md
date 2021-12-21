@@ -3,7 +3,15 @@
 
 # Overview
 
-This is a Python 3 implementation of a (3x3) Rubik's Cube solver.
+Provide a short string and this program will find the letters and solve such that those letters end up on the front of the cube.
+You can also use it to solve the full cube in the normal fashon based on the colors.
+
+It is implemented using Python 3.
+
+The code is based on "Python Rubik's cube solver" https://github.com/pglass/cube .  Where I used the math transforms as-is
+and I used fundimantal solving algorithm design.  But I refactored the code fairly significantly allowing extra attributes
+for a piece beyond just it's colors.  And added a bunch of extra functionality to manipulate the cube based on labels decorated
+with letters.
 
 It contains:
 
@@ -14,28 +22,6 @@ It contains:
 
 ## Installation
 
-The package is hosted on PyPI.
-
-```
-pip install rubik-cube
-```
-
-Import from the `rubik` package,
-
-```python
->>> from rubik.cube import Cube
->>> c = Cube("OOOOOOOOOYYYWWWGGGBBBYYYWWWGGGBBBYYYWWWGGGBBBRRRRRRRRR")
->>> print(c)
-    OOO
-    OOO
-    OOO
-YYY WWW GGG BBB
-YYY WWW GGG BBB
-YYY WWW GGG BBB
-    RRR
-    RRR
-    RRR
-```
 
 ## Implementation
 
@@ -51,7 +37,7 @@ pieces of information:
     - the positive y-axis points to the up face
     - the positive z-axis points to the front face
 
-2. A `colors` vector `(cx, cy, cz)`, giving the color of the sticker along each
+2. A `stickers` vector `(sx, sy, sz)`, giving the a tuple of (color,label,group,destination) of the sticker along each
 axis. Null values are place whenever that Piece has less than three sides. For
 example, a Piece with `colors=('Orange', None, 'Red')` is an edge piece with an
 `'Orange'` sticker facing the x-direction and a `'Red'` sticker facing the
@@ -59,9 +45,23 @@ z-direction. The Piece doesn't know or care which direction along the x-axis
 the `'Orange'` sticker is facing, just that it is facing in the x-direction and
 not the y- or z- directions.
 
-Using the combination of `position` and `color` vectors makes it easy to
-identify any Piece by its absolute position or by its unique combination of
-colors.
+This same piece may optionally have three labels. ('T', None, '-').  So the 'Orange'
+would also be decorated with a 'T'.  I define the character '-' with special meaning
+that there is no label decoration on this sticker.  In this example, the 'Red' sticker
+would not have a label on it.
+
+To simplify the problem, each Piece will have a group.  And all stickers on the Piece
+will be defined as beingin the same group.  Typically multiple pieces will be in a single group.
+When solved, the letter is placed on the front side but is restricted to the position defined by its
+group.  When solved, all other sitckers within the same group will be '-' or blank.
+
+The `destination` is a rather more generic way of describing the direction of
+a sitcker in solved position.  A destination can be any one of these letters: `ULFRDB` for
+`up, left, front, right, and down`.  For a normal cube every destination corresponds directly to a color:
+`OGWBYR` because solving results in all `orange` on the `up` face, all `green` on the `left` face, etc.
+By removing this restriction of for instance `up = orange` the cube can be considered solved when the
+message string is on the front, thus disregarding the actuall colors of the cube.
+
 
 A Piece provides a method `Piece.rotate(matrix)`, which accepts a (90 degree)
 rotation matrix. A matrix-vector multiplication is done to update the Piece's
@@ -108,18 +108,38 @@ then the middle layer (`z = 0`), and finally the back layer (`z = -1`). When
 the solver is done, `Solver.moves` is a list representing the solution
 sequence.
 
-My first correct-looking implementation of the solver average 252.5 moves per
-solution sequence on 135000 randomly-generated cubes (with no failures).
-Implementing a dumb optimizer reduced the average number of moves to 192.7 on
-67000 randomly-generated cubes. The optimizer does the following:
+You can pass a short string to the solver.  And it will solve the front layer only.
+No need tocontinue solving the entire cube.  After the front is solved, destinations are
+assigned to the resulting cube in case you want to export the cube state to be handled
+byt a more capable solver that will calculate the minimum number of moves to get to
+the final solved state.
 
-1. Eliminate full-cube rotations by "unrotating" the moves (Z U L D Zi becomes
-L D R)
-2. Eliminate moves followed by their inverse (R R Ri Ri is gone)
-3. Replace moves repeated three times with a single turn in the opposite
-direction (R R R becomes Ri)
+### state conversion
+For import/export, there is a class that handles some cube state conversions.  You can call some of these
+conversions to make it easier to call external programs like a mor efficient solver, display a javascript
+or html webpage, validate colors from camera input.
 
-The solver is not particularly fast. On my machine (a 4.0 Ghz i7), it takes
-about 0.06 seconds per solve on CPython, which is roughly 16.7 solves/second.
-On PyPy, this is reduced to about 0.013 seconds per solve, or about 76
-solves/second.
+### robot
+I am using a robot with only two grippers so moves are restricted to "down" and "back" (and related moves).
+So I have some conversions to generate only those legal moves.
+
+### camera
+This implements functionality to use the robot to rotate the cube to present all six sides to the raspberry pi
+camera.  After all sticker colors are sampled, the values are provided to a pretty robust piece of software to assign
+a stick color to every sticker.
+
+
+### webpage
+
+There is a simple webpage to display the cube, edit the cube, and initiate various commands:
+1. open robot grippers
+2. cradle grippers (to allow a person to place a cube ready to be solved or remove it)
+3. stop all operation.  Abort whatever is going on right now.
+4. input a message to solve.
+5. solve it
+6. You can import a cube state
+7. You can edit any sticker in case software calculated it wrong.
+8. You can save the cube state
+
+The webpage is based on bottle webserver https://bottlepy.org/
+
