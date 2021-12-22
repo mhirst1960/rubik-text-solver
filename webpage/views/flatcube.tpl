@@ -1,5 +1,5 @@
 
-    <div style="padding-bottom:200px">
+    <div>
         <form cubeaction="/cube" method="post">
 
             <div><BR><BR>If the Cube does not look right you can reload the cube or click to edit.<br></div>

@@ -74,6 +74,7 @@ class CubeWebpage:
    </div>
 </div>
 <div style="clear:both"></div>
+<div style="padding-bottom:200px"> </div>
 </body>
 </html>
         '''
@@ -178,8 +179,8 @@ class CubeWebpage:
         cubeHTML = self.generateCubeHTML()
         
         page = (self.HTML_HEADER + self.HTML_CONTROL_BUTTONS +
-                cubeHTML +
                 self.HTML_STATUS.format(lastCommand=self.lastCommand) +
+                cubeHTML +
                 self.HTML_SUFFIX
                 )
         
