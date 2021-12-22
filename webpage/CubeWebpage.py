@@ -28,6 +28,10 @@ class CubeWebpage:
     </head>
     
     <body>
+    <div style="width: 100%;">
+   <div>
+
+   <div style="float:left; width: 70%">
     '''
 
     HTML_CONTROL_BUTTONS = '''
@@ -58,11 +62,18 @@ class CubeWebpage:
     '''
     
     HTML_STATUS = '''
-        Status: {lastCommand}
+        <H2> Status: {lastCommand} </H2>
     '''
     
     HTML_SUFFIX = '''
-
+   </div>
+   </div>
+   </div>
+   <div style="float:right; padding-right:50px; padding-top:200px;">
+   <img src="/static/rubiksuitman-50.jpg" style="float:right;"  />
+   </div>
+</div>
+<div style="clear:both"></div>
 </body>
 </html>
         '''
