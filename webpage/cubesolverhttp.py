@@ -104,7 +104,13 @@ def do_cube():
             process_solveit = subprocess.Popen(["sleep","10"], stdout = subprocess.PIPE)
         else:
             try:
-                process_solveit = subprocess.Popen(["tmwrubik.py","--person", person, "-vv", "--simulation", "--input", "file", "--infile", "~/cubestate.txt"], stdout = subprocess.PIPE)
+                print("calling tmwrubik.py ...")
+                process_solveit = subprocess.Popen(["tmwrubik.py",
+                                                    "--person", person, "-vv",
+                                                    "--inputorder", "kociemba",
+                                                    "--output", "robot", "--robot",
+                                                    "--input", "file",
+                                                    "--infile", "/home/pi/cubestate.txt"], stdout = subprocess.PIPE)
             except:
                 cubepage.setMessage("Error attempting to access camera or robot")
                 return cubepage.renderPage()
@@ -112,7 +118,7 @@ def do_cube():
         out, err = process_solveit.communicate()
         solveitPid = None
         process_solveit = None
-        print ("Done solving the cube.")
+        print ("Done solving the cube. output: ", out, "err: ", err)
     
     editAction = request.forms.get('cube-TMW')
 
@@ -169,7 +175,7 @@ def do_cube():
             person = ""
         #person = request.forms.get('solve')
         if person != "":
-            thread = Thread(target=do_solveit)
+            thread = Thread(target=do_solveit, args=(person,))
             thread.start()
             cubepage.setMessage(f"Solving cube for {person}")
         else:

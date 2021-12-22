@@ -268,6 +268,14 @@ def run():
     html.generateHTML()
     print (f"Cube URL: file:{htmlPath}/index.html")
     
+    if solveWithRobot:
+        moves = ' '.join(optimizedRobotMoves)
+        print("solving with these moves: ",moves)
+        #print ("debugging B Bi for now")
+        #moves = "B Bi"
+        
+        output = subprocess.run(["/home/pi/rubik/rubik-text-solver/robot/moverrobot.py", "--moves", moves, "--cradleafter"], stdout=subprocess.PIPE).stdout.decode('utf-8')
+        print ("moverrobot.py output: ", output)
     # updatestate = persistance. Next time we run cube will be configured as we left off here
     if updateState and inputFile != None:
         solver = Solver(origionalCube)

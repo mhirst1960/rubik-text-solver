@@ -65,7 +65,10 @@ class RobotMoves:
             self.converter = self.GrippersYZ
         else:
             assert False
-        
+    
+    def isMoveLegal(self, move):
+        return move in self.GrippersYZ
+    
     def convert(self, moves):
         """
         convert list of moves to list of moves compatible with your robot
