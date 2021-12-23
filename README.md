@@ -33,6 +33,9 @@ It contains:
 This is a nice optimize solver I make calls to:
 https://github.com/hkociemba/RubiksCube-TwophaseSolver
 
+pip3 install kociemba
+
+
 A nice javascript cube view I found useful:
 https://cubing.github.io/AnimCubeJS/animcubejs.html#introduction
 

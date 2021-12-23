@@ -212,8 +212,8 @@ class Solver:
                     self.rotateLabelToFront('-', blankPiece, p.pos)
                     count += 1
                     #blankPiece.assignDestinationToFront('-', p.pos)
-                print(f"{frontString}: {labelChar} Cube so far:\n", self.cube)
-                print(f"moves so far: {self.moves}")
+                #print(f"{frontString}: {labelChar} Cube so far:\n", self.cube)
+                #print(f"moves so far: {self.moves}")
                 
             group+=1
             groupch = chr(ord('0') + group)

@@ -77,6 +77,7 @@ class RobotMoves:
         
         for move in moves:
             if move == '': continue
+            move = move.replace("'", 'i')
             move = move.replace('3', 'i')
             move = move.replace('1', '')
             if move in self.converter:

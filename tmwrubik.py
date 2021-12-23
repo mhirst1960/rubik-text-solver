@@ -160,6 +160,7 @@ def run():
     
     origionalCube = Cube(unfoldColors)
     cCube = Cube(unfoldColors)
+    kCube = Cube(unfoldColors)
     
     #TODO for debug only
     #cCube.setPrintStyle(CubePrintStyles.DestinationGroupColored)
@@ -173,17 +174,22 @@ def run():
     #cubeSolver.debugShowCubeAfterEveryMove = True
     
     personCube = cubeSolver.generateCubeForMessage(person)
+    kPersonCube = Cube(personCube)
     unsolvedCubeState = personCube.getDestinationColorString()
     #unsolvedCubeColors = personCube.getDestinationColorString()
     kCubeDestinations = co.convert(unsolvedCubeState, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
     cubeColors = personCube.colorString()
     kColors = co.convert(cubeColors, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
     aColors = co.convert(cubeColors, co.SLICE_UNFOLD_BACK, co.SLICE_ANIMJS3)
-
+    destinations = personCube.getDestinationString()
+    kociembaDestinations = co.convert(destinations, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
+    
     if DEBUG > 1:
         print (f"{person} personCube before solve: \n", personCube)
         print (f"cube colors:     {cubeColors}")
+        print (f"cube state fold: {destinations}")
         print (f"Kociemba colors: {kColors}")
+        print (f"Kociemba state:  {kociembaDestinations}")
         print (f"Anim colors:     {aColors}")
         
     #if updateState or outputDataType == 'colors' or outputDataType == 'frontstring' or outputDataType == 'moves':
@@ -210,7 +216,7 @@ def run():
     if DEBUG > 1: print (f"Solved Moves: \n", moves)
     
     destinations = personCube.getDestinationString()
-    kociembaDestinations = co.convert(destinations, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
+    #kociembaDestinations = co.convert(destinations, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
     xrayColors = getColorString(destinations)
     kociembaColors = getColorString(kociembaDestinations)
 
@@ -235,25 +241,49 @@ def run():
     elif outputDataType == 'moves':
         print (f"{solver.getMovesString()}")
 
-    doKociembaOptimization = False
+    doKociembaOptimization = True
     if doKociembaOptimization:
         #kociemba requires server to be running
         # cd .../RubiksCube-TwophaseSolver
         # python3 start_server.py 8080 20 2
         #
-        proc1 = subprocess.Popen(['echo', kociembaDestinations], stdout=subprocess.PIPE)
-        proc2 = subprocess.Popen(['nc', 'localhost', '8080'], stdin=proc1.stdout,
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        #kociemba assumes cube is already oriented to the front and ignores center orientations in the request
+        # so lets orient the cube and save the moves we made to get there.
+        prependMoves = kPersonCube.orientToFront()
+        kDestinations = kPersonCube.getDestinationString()
+        kociembaDestinations = co.convert(kDestinations, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
+    
+        dopipinstalled = True
+        if dopipinstalled:
+            # assumes kociemba optimized cube solver is installed with:
+            #    pip3 install kociemba
+            out = subprocess.run(["kociemba",kociembaDestinations], stdout=subprocess.PIPE).stdout.decode('utf-8')
+            print('kociemba output: {0}'.format(out))
+            kMoves = prependMoves + ' ' + out.rstrip()
+        else:
+            #local build of kociemba
+            proc1 = subprocess.Popen(['echo', kociembaDestinations], stdout=subprocess.PIPE)
+            proc2 = subprocess.Popen(['nc', '-q', '1', 'localhost', '8080'], stdin=proc1.stdout,
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        proc1.stdout.close() # Allow proc1 to receive a SIGPIPE if proc2 exits.
-        out, err = proc2.communicate()
-        print('kociemba output: {0}'.format(out))
-        print('stderr: {0}'.format(err))
-        kMoves = out.decode('utf-8').split('(')[0]
+            proc1.stdout.close() # Allow proc1 to receive a SIGPIPE if proc2 exits.
+            out, err = proc2.communicate()
+            print('stderr: {0}'.format(err))
+            print('kociemba output: {0}'.format(out))
+            kMoves = out.decode('utf-8').split('(')[0]
         print(f"{person} kociembe moves: {kMoves}")
         kMovesList = kMoves.split(' ')
         kRobotMoves = rm.optimize(kMovesList)
         print(f"{person} k robot moves: {' '.join(kRobotMoves)}")
+        
+        print (f"kociemba number of moves:    {len(kRobotMoves)}")
+        print (f"Unoptimized number of moves: {len(optimizedRobotMoves)}")
+        if (len(kRobotMoves) > 1) and (len(kRobotMoves) < len(optimizedRobotMoves)):
+            print ("Using Kociemba optimization. It's better")
+            optimizedRobotMoves = kRobotMoves
+        else:
+            print ("I wonder why Kociemba is not better that normal.  Hmm.  Using non-optimized.")
 
     subtitle = f"Cube for {person}"
     home = str(Path.home())
