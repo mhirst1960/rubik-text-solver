@@ -44,6 +44,7 @@ https://github.com/dwalton76/rubiks-color-resolver
 
 A nice web server I use for the webpage:
 https://bottlepy.org/docs/dev/index.html
+sudo pip3 install bottle
 
 ## Installation
 

@@ -136,6 +136,8 @@ def run():
         assert len(inputColors) == 54
     
     referenceCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS, TMW_CUBE_GROUPS, TMW_CUBE_GROUPS)
+    rubikCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS, TMW_CUBE_GROUPS, TMW_CUBE_GROUPS) # for normal full color solving
+    
     if DEBUG > 1: print (f"Initial reference cube: \n", referenceCube)
 
     co = CubeOrder()

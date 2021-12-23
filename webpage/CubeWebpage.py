@@ -204,6 +204,25 @@ class CubeWebpage:
         self.setCubeState(cubeState)
         
         return self.cubeSate
+    
+    def loadCameraCubeState(self, file=None):
+        
+        if file == None:
+            file = self.cameraCubeStateFile
+        else:
+            self.cameraCubeStateFile = file
+                        
+        if file != None:
+            f = open(file, "r")
+            inputColors = f.read()
+            f.close()
+            inputColors = inputColors.rstrip()
+            if len(inputColors) == 54:
+                cubeState = inputColors
+        
+        self.setCubeState(cubeState)
+        
+        return self.cubeSate
         
     def saveCubeState(self, file=None):
         

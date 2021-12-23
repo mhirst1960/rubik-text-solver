@@ -20,8 +20,9 @@ from CubeMover import CubeMover
 from Lighting import Lighting
 
 HOME = "/home/pi/"
+#OUTFILE = HOME + "cameracubestate.txt"
 OUTFILE = HOME + "cubestate.txt"
-HTMLDIR = HOME + "/cubeshower/"
+HTMLDIR = HOME + "/cameraviewer/"
 
 hiRes = False
 
@@ -118,6 +119,7 @@ else:
 camera.awb_mode = 'off'
 
 animColorLookup = {'L':'G', 'R':'B', 'F':'W', 'B':'Y', 'U':'O', 'D':'R'}
+rcrStateFaceReorderLookup = {'L':'U', 'R':'D', 'F':'B', 'B':'F', 'U':'L', 'D':'R'}
 
 colorResolverLookup = [
                      1,  2,  3,
@@ -140,6 +142,23 @@ animOrderLookup = [7, 8, 9,
                   10, 13, 16,
                   11, 14, 17,
                   12, 15, 18]
+
+#
+def convertRCRStateToMyState(rcrCubeState):
+    """
+    color resolver assigned corors differently that we do. E.g. orange should be up not left
+    """
+    assert len(rcrCubeState) == 54
+    reorderedState = [None] * 54
+    for i in range(54):
+        #find i in colorResolverLookup
+        s = rcrCubeState[i]
+        color = rcrStateFaceReorderLookup[s]
+        
+        reorderedState[i] = color
+        
+    newState = "".join(reorderedState)
+    return newState
 
 def convertStateToAnimColors(state):
     """
@@ -545,15 +564,18 @@ result = subprocess.run(["rubiks-color-resolver.py",
                 "--filename",
                 fname], stdout=subprocess.PIPE)
 
-cubeState = result.stdout.decode('utf-8')
-print ("cubeState = ", cubeState)
+rcrCubeState = result.stdout.decode('utf-8')
+print ("rubiks-color-resolver cubeState = ", rcrCubeState)
+rcrCubeState = rcrCubeState.rstrip()
 
+#color resolver assigned corors differently that we do. E.g. orange should be up not left
+cubeState = convertRCRStateToMyState(rcrCubeState)
+print ("cubeState = ", cubeState)
 
 f = open(OUTFILE, "w")
 f.write(cubeState)
 f.close()
 
-cubeState = cubeState.rstrip()
 
 generateHTML(HTMLDIR, cubeState)
 

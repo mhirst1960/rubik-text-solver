@@ -30,6 +30,7 @@ cubepage = CubeWebpage()
 
 home = str(Path.home())
 cubeStateFile = home + '/cubestate.txt'
+cameraCubeStateFile = home + '/cameracubestate.txt'
 
 personDecoder = {
     "TMW":"TMW",  # The Mad Wrapper
@@ -177,12 +178,15 @@ def do_cube():
         if person != "":
             thread = Thread(target=do_solveit, args=(person,))
             thread.start()
-            cubepage.setMessage(f"Solving cube for {person}")
+            cubepage.setMessage(f"Solving cube for {codeName}")
         else:
             cubepage.setMessage("Nope. Thats not a good name: " + codeName)
     elif action == 'reloadcubestate':
         cubepage.loadCubeState(cubeStateFile)
         cubepage.setMessage(f"refreshed the cube")
+    elif action == 'reloadcameracubestate':
+        cubepage.loadCameraCubeState(cubeStateFile)
+        cubepage.setMessage(f"refreshed the cube from camera results")
 
     elif action == 'savecubestate':
         cubepage.saveCubeState(cubeStateFile)
