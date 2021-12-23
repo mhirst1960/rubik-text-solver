@@ -83,6 +83,8 @@ class CubeWebpage:
         self.cubeSate = "X"*54
         self.lastCommand = ""
         self.cubeStateFile = None
+        self.cubeStateLastActionWasEdit = False
+        
     
     rubikColors = {'green':'#008000', 'red':'#FF0000', 'blue':'#0000FF', 'orange':'#ff7900', 'white':'#FFFFFF', 'yellow':'#FFFF00', 'grey':'#a9a9a9',
                     'G':'#008000', 'R':'#FF0000', 'B':'#0000FF', 'O':'#ff7900', 'W':'#FFFFFF', 'Y':'#FFFF00', 'X':'#a9a9a9'}

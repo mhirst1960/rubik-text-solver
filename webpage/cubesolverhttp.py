@@ -71,7 +71,7 @@ def server_static(filename):
 def cube():
         
     cubepage.loadCubeState(cubeStateFile)
-        
+    cubepage.cubeStateLastActionWasEdit = False
     return cubepage.renderPage()
 
 
@@ -126,6 +126,7 @@ def do_cube():
     if editAction != None:
         print ("process color: ", editAction)
         result = cubepage.processEditAction(editAction)
+        cubepage.cubeStateLastActionWasEdit = True
         cubepage.setMessage(result)
         return cubepage.renderPage()
 
@@ -168,7 +169,11 @@ def do_cube():
 
         return "<p>Inspecting Cube now.</p>"
     elif action == 'solve':
-        cubepage.saveCubeState()
+        if cubepage.cubeStateLastActionWasEdit:
+            cubepage.saveCubeState()
+        else:
+            cubepage.loadCubeState(cubeStateFile)
+
         codeName = request.forms.get('solve')
         if codeName != "":
             person = decodeCodeName(codeName)
@@ -183,13 +188,16 @@ def do_cube():
             cubepage.setMessage("Nope. Thats not a good name: " + codeName)
     elif action == 'reloadcubestate':
         cubepage.loadCubeState(cubeStateFile)
+        cubepage.cubeStateLastActionWasEdit = False
         cubepage.setMessage(f"refreshed the cube")
     elif action == 'reloadcameracubestate':
         cubepage.loadCameraCubeState(cubeStateFile)
+        cubepage.cubeStateLastActionWasEdit = False
         cubepage.setMessage(f"refreshed the cube from camera results")
 
     elif action == 'savecubestate':
         cubepage.saveCubeState(cubeStateFile)
+        cubepage.cubeStateLastActionWasEdit = False
         cubepage.setMessage(f"saved the cube")
 
     return cubepage.renderPage()
