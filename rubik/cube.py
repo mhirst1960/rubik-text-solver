@@ -501,7 +501,14 @@ class Cube:
         
         print ("alldestinations should be assigned: ", self)    
         assert len(unassigned) == 0
-            
+        
+    def assignDestinationsFromColor(self):
+        """
+        Use sticker color to assign destinations. W=Front, O=Up, etc.  aka normal cube.
+        """
+        for p in self.pieces:
+            p.assignDestinationsFromColor()
+                    
     def getFrontPieces(self):
         front = [p for p in sorted(self._face(FRONT), key=lambda p: (-p.pos.y, p.pos.x))]
         return front

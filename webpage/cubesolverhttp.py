@@ -33,7 +33,10 @@ cubeStateFile = home + '/cubestate.txt'
 cameraCubeStateFile = home + '/cameracubestate.txt'
 
 personDecoder = {
-    "TMW":"TMW",  # The Mad Wrapper
+    
+    "rubik":"solve", # just solve the cube
+    "solve":"solve",
+    "TMW":"solve",   # The Mad Wrapper is the message on the solved cube
     
     "kind ramanujan":       "DEH",  # Don
     "quirky banach":        "LMH",  # Linnea

@@ -310,7 +310,6 @@ class CubeWebpage:
             return 'X'
             
         self.setCubeState(''.join(cs))
-        #self.cubeSate = ''.join(cs)
         
         return newColor
 

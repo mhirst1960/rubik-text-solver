@@ -125,6 +125,11 @@ class Piece:
  
         return destinations
 
+    def assignDestinationsFromColor(self):
+        for s in self.stickers:
+            if s != None:
+                s.setDefaultDestination()
+
     def _getSolvedPosFromFaces(self):
         
         if all(f is None for f in self.solvedFaces):

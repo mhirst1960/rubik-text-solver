@@ -112,6 +112,18 @@ def getColorString(destinationsString):
         destinationsString = ''.join(l)
     return destinationsString
         
+    
+def getDestinationString(colorString):
+    # if string is cube state not colors, convert to colors
+    allowed = set('OGWBYR')
+    if set(colorString) <= allowed:
+        tbl = {'O':'U','R':'D','W':'F','Y':'B','G':'L','B':'R'}
+        l = list(colorString)
+        for i,d in enumerate(l):
+            l[i] = tbl[l[i]]
+        colorString = ''.join(l)
+    return colorString
+
 def run():
     
     global inputColors
@@ -136,9 +148,10 @@ def run():
         assert len(inputColors) == 54
     
     referenceCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS, TMW_CUBE_GROUPS, TMW_CUBE_GROUPS)
-    rubikCube = Cube(CUBE_COLORS, TMW_CUBE_LABELS, TMW_CUBE_GROUPS, TMW_CUBE_GROUPS) # for normal full color solving
     
     if DEBUG > 1: print (f"Initial reference cube: \n", referenceCube)
+
+    rm = RobotMoves()
 
     co = CubeOrder()
     if inputOrder == 'xray':
@@ -152,6 +165,7 @@ def run():
 
     xrayColors = co.convert(unfoldColors, co.SLICE_UNFOLD_BACK, co.SLICE_XRAYBACK)
     kociembaColors = co.convert(unfoldColors, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
+    #kociembaInputColors = co.convert(unfoldColors, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
     if DEBUG > 1: print ("xray input:      ", xrayColors)
     if DEBUG > 1: print ("fold input:      ", unfoldColors)
     if DEBUG > 1: print ("kociemba input:  ", kociembaColors)
@@ -163,6 +177,8 @@ def run():
     origionalCube = Cube(unfoldColors)
     cCube = Cube(unfoldColors)
     kCube = Cube(unfoldColors)
+    rubikCube = Cube(unfoldColors) # for normal full color solving
+    rubikCube.assignDestinationsFromColor()
     
     #TODO for debug only
     #cCube.setPrintStyle(CubePrintStyles.DestinationGroupColored)
@@ -175,11 +191,16 @@ def run():
     # print version of the cube every time it moves
     #cubeSolver.debugShowCubeAfterEveryMove = True
     
-    personCube = cubeSolver.generateCubeForMessage(person)
+    if solveNormalCube:
+        personCube = Cube(cCube)
+        personCube.assignDestinationsFromColor()
+        #rubikCube.assignDestinationsFromColor()
+
+    else:
+        personCube = cubeSolver.generateCubeForMessage(person)
     kPersonCube = Cube(personCube)
     unsolvedCubeState = personCube.getDestinationColorString()
-    #unsolvedCubeColors = personCube.getDestinationColorString()
-    kCubeDestinations = co.convert(unsolvedCubeState, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
+
     cubeColors = personCube.colorString()
     kColors = co.convert(cubeColors, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
     aColors = co.convert(cubeColors, co.SLICE_UNFOLD_BACK, co.SLICE_ANIMJS3)
@@ -197,65 +218,73 @@ def run():
     #if updateState or outputDataType == 'colors' or outputDataType == 'frontstring' or outputDataType == 'moves':
     if DEBUG > 1: print (f"cube before solve: \n", cCube)
     solver = Solver(cCube)
-    #personCube = solver.generateCubeForMessage(person)
-    solver.solveFront()
-    #solver.solveFrontString(person)
-    moves = solver.moves
-    optimizedMoves = optimize_moves(moves)
-    rm = RobotMoves()
-    robotMoves = rm.convert(optimizedMoves)
-    optimizedRobotMoves = rm.optimize(optimizedMoves)
-    
-    if moveNotation == "singmaster":
-        for i, move in enumerate(moves):
-            move = move.replace("i", "'")
-            moves[i] = move
-    elif moveNotation == "programmer":
-        for i, move in enumerate(moves):
-            move = move.replace("'", "i")
-            moves[i] = move
-    if DEBUG > 1: print (f"Solved Cube: \n", cCube)
-    if DEBUG > 1: print (f"Solved Moves: \n", moves)
-    
-    destinations = personCube.getDestinationString()
-    #kociembaDestinations = co.convert(destinations, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
-    xrayColors = getColorString(destinations)
-    kociembaColors = getColorString(kociembaDestinations)
 
-    if DEBUG > 0:
-        print (f"-----------Debug----------------------")
-        print (f"tmwrubik output:")
-        print (f"xray Destinations:     {destinations}")
-        print (f"Xray Colors:           {xrayColors}")
-        print (f"Kociemba Destinations: {kociembaDestinations}")
-        print (f"Kociemba Colors:       {kociembaColors}")
-        print (f"Message:               {cCube.getFrontString()}")
-        if outputDataType == 'colors' or outputDataType == 'frontstring' or outputDataType == 'moves':
-            print (f"Moves:                 {solver.getMovesString()}")
-        print ("---------------------------------------")
+    if not solveNormalCube:
+        solver.solveFront()
 
-    if outputDataType == "destinations":
-        print (f"{kociembaDestinations}")
-    elif outputDataType == "colors":
-        print (f"{cCube.colorString()}")
-    elif outputDataType == 'frontstring':
-        print (f"{cCube.getFrontString()}")
-    elif outputDataType == 'moves':
-        print (f"{solver.getMovesString()}")
+        moves = solver.moves
+        optimizedMoves = optimize_moves(moves)
+        optimizedRobotMoves = rm.optimize(optimizedMoves)
+        
+        if moveNotation == "singmaster":
+            for i, move in enumerate(moves):
+                move = move.replace("i", "'")
+                moves[i] = move
+        elif moveNotation == "programmer":
+            for i, move in enumerate(moves):
+                move = move.replace("'", "i")
+                moves[i] = move
+        if DEBUG > 1: print (f"Solved Cube: \n", cCube)
+        if DEBUG > 1: print (f"Solved Moves: \n", moves)
+        
+        destinations = personCube.getDestinationString()
+        #kociembaDestinations = co.convert(destinations, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
+        xrayColors = getColorString(destinations)
+        kociembaColors = getColorString(kociembaDestinations)
+
+        if DEBUG > 0:
+            print (f"-----------Debug----------------------")
+            print (f"tmwrubik output:")
+            print (f"xray Destinations:     {destinations}")
+            print (f"Xray Colors:           {xrayColors}")
+            print (f"Kociemba Destinations: {kociembaDestinations}")
+            print (f"Kociemba Colors:       {kociembaColors}")
+            print (f"Message:               {cCube.getFrontString()}")
+            if outputDataType == 'colors' or outputDataType == 'frontstring' or outputDataType == 'moves':
+                print (f"Moves:                 {solver.getMovesString()}")
+            print ("---------------------------------------")
+
+        if outputDataType == "destinations":
+            print (f"{kociembaDestinations}")
+        elif outputDataType == "colors":
+            print (f"{cCube.colorString()}")
+        elif outputDataType == 'frontstring':
+            print (f"{cCube.getFrontString()}")
+        elif outputDataType == 'moves':
+            print (f"{solver.getMovesString()}")
 
     doKociembaOptimization = True
     if doKociembaOptimization:
-        #kociemba requires server to be running
-        # cd .../RubiksCube-TwophaseSolver
-        # python3 start_server.py 8080 20 2
-        #
+
         
         #kociemba assumes cube is already oriented to the front and ignores center orientations in the request
-        # so lets orient the cube and save the moves we made to get there.
-        prependMoves = kPersonCube.orientToFront()
-        kDestinations = kPersonCube.getDestinationString()
-        kociembaDestinations = co.convert(kDestinations, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
+        # so we need to orient the cube and save the moves we made to get there.
     
+        prependMoves = ''
+
+        if solveNormalCube:
+            #print ("normal cube before orient: \n", rubikCube)
+            prependMoves = rubikCube.orientToFront()
+            rubikCube.assignDestinationsFromColor()
+            #print ("normal cube after orient: \n", rubikCube)
+            wrapDestinations = rubikCube.getDestinationString()
+            kociembaDestinations = co.convert(wrapDestinations, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
+            print ("kociemba destinations: ", kociembaDestinations)
+        else:
+            prependMoves = kPersonCube.orientToFront()
+            kDestinations = kPersonCube.getDestinationString()
+            kociembaDestinations = co.convert(kDestinations, co.SLICE_UNFOLD_BACK, co.KOCIEMBA_ORDER)
+
         dopipinstalled = True
         if dopipinstalled:
             # assumes kociemba optimized cube solver is installed with:
@@ -280,12 +309,11 @@ def run():
         print(f"{person} k robot moves: {' '.join(kRobotMoves)}")
         
         print (f"kociemba number of moves:    {len(kRobotMoves)}")
-        print (f"Unoptimized number of moves: {len(optimizedRobotMoves)}")
-        if (len(kRobotMoves) > 1) and (len(kRobotMoves) < len(optimizedRobotMoves)):
-            print ("Using Kociemba optimization. It's better")
-            optimizedRobotMoves = kRobotMoves
-        else:
-            print ("I wonder why Kociemba is not better that normal.  Hmm.  Using non-optimized.")
+        #if (len(kRobotMoves) > 1) and (len(kRobotMoves) < len(optimizedRobotMoves)):
+        #    print ("Using Kociemba optimization. It's better")
+        optimizedRobotMoves = kRobotMoves
+        #else:
+        #    print ("I wonder why Kociemba is not better that normal.  Hmm.  Using non-optimized.")
 
     subtitle = f"Cube for {person}"
     home = str(Path.home())
@@ -336,7 +364,7 @@ if __name__ == '__main__':
     
     parser.add_argument('--verbose', '-v', action='count', default=0, \
         help="show debug messages -v, -vv, -vvv for more and more debug")
-    parser.add_argument("--person", default='TMW', help="initials for person to solve for")
+    parser.add_argument("--person", default='solve', help="initials for person to solve for.  Or 'solve' to just solve the cube normally for solid color on every side.")
     parser.add_argument("--inputorder", default='unfold', help="Color input from camera or color string order: back=front, onfolded paper cube, or orbital kociemba", \
                             choices=['xray', 'unfold', 'kociemba', 'camera'])
     parser.add_argument("--infile", \
@@ -370,6 +398,11 @@ if __name__ == '__main__':
         DEBUG=args.verbose
     
     person = args.person
+    if person == 'solve':
+        solveNormalCube = True
+    else:
+        solveNormalCube = False
+        
     useRobot = args.robot
     useCamera = args.camera
     inputOrder = args.inputorder
