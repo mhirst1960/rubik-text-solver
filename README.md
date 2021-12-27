@@ -7,10 +7,41 @@ Provide a short string and this program will find the letters and solve such tha
 You can also use it to solve the full cube in the normal fashon based on the colors.
 
 I implemented two examples:
-1. a solver for the initialis of everyone in my family
+1. a solver for the initials of everyone in my family
 2. a rubik-clock which shows the time of day on the cube as a 12-hour clock with am/pm
 
 Everything is written using Python 3.
+
+# Run the Robot
+
+## start the web server
+Run this command after logging in:
+
+starttmwwebpage.sh
+
+That is a script found in ~/bin that simply runs the folowing command without arguments.  This is the entry point to the web server:
+
+rubik-text-solver/webpage/cubesolverhttp.py
+
+## Run in browser
+
+Use this URL in your browser running on the Raspberry Pi that runs the robot.
+
+http://localhost:18080/cube
+
+
+![image](https://user-images.githubusercontent.com/6749076/147513992-eda8c919-97c3-4b4c-a2b5-b9bf5c6adb5a.png)
+
+Assuming the cube is correctly represented in the picture, type in the user's code name and press "Solve the cube!".  Ultimately this runs the command:
+
+tmwrubik.py --person person --inputorder kociemba --output robot" --robot" --input file --infile /home/pi/cubestate.txt
+
+Where "person" is a person's initials (E.g. "KLH") and cubestate.txt is a 54-character string representing the current colors of the cube.  E.g.
+
+BWWYOGBWGORGGGOGGOOOWBYWBRYRBROROORYYGYRBYWYWRBRBWWGYB
+
+
+# More Details
 
 The main solver is based on "Python Rubik's cube solver" https://github.com/pglass/cube .  Where I used the math transforms as-is
 and I used fundimantal solving algorithm design.  But I refactored the code fairly significantly allowing extra attributes
