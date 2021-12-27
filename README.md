@@ -6,12 +6,17 @@
 Provide a short string and this program will find the letters and solve such that those letters end up on the front of the cube.
 You can also use it to solve the full cube in the normal fashon based on the colors.
 
-It is implemented using Python 3.
+I implemented two examples:
+1. a solver for the initialis of everyone in my family
+2. a rubik-clock which shows the time of day on the cube as a 12-hour clock with am/pm
 
-The solver is based on "Python Rubik's cube solver" https://github.com/pglass/cube .  Where I used the math transforms as-is
+Everything is written using Python 3.
+
+The main solver is based on "Python Rubik's cube solver" https://github.com/pglass/cube .  Where I used the math transforms as-is
 and I used fundimantal solving algorithm design.  But I refactored the code fairly significantly allowing extra attributes
 for a piece beyond just it's colors.  And added a bunch of extra functionality to manipulate the cube based on labels decorated
 with letters.
+
 
 It contains:
 
@@ -19,11 +24,17 @@ It contains:
 - A solver that follows a fixed algorithm
 - An unintelligent solution sequence optimizer
 - A decent set of test cases
+- robot control
+- raspberry pi camera functionality
+- webpage for manipulating the cube
 
 ## Other cool things I use in this project
 
 This is a nice optimize solver I make calls to:
 https://github.com/hkociemba/RubiksCube-TwophaseSolver
+
+pip3 install kociemba
+
 
 A nice javascript cube view I found useful:
 https://cubing.github.io/AnimCubeJS/animcubejs.html#introduction
@@ -33,6 +44,7 @@ https://github.com/dwalton76/rubiks-color-resolver
 
 A nice web server I use for the webpage:
 https://bottlepy.org/docs/dev/index.html
+sudo pip3 install bottle
 
 ## Installation
 
@@ -157,3 +169,7 @@ There is a simple webpage to display the cube, edit the cube, and initiate vario
 
 The webpage is based on bottle webserver https://bottlepy.org/
 
+Note: if you have this connected to a live robot, this webpage might be a little dangerous to access from a remote host as there are buttons to directly control the robot grippers.  If you plan to only run the webpage on a browser on your local raspberry pi. Consider
+setting up a firewall.  I used port 18080.  (You can use any port you want, the standard is typically port 8080 or port 80).  So consider running this command on you raspberry pi when you are running the webpage to block other computers from accessing the webpage, adjusting the port that you are using:
+
+iptables -A INPUT -p tcp --dport 18080 -j DROP

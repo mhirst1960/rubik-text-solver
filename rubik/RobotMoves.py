@@ -65,7 +65,10 @@ class RobotMoves:
             self.converter = self.GrippersYZ
         else:
             assert False
-        
+    
+    def isMoveLegal(self, move):
+        return move in self.GrippersYZ
+    
     def convert(self, moves):
         """
         convert list of moves to list of moves compatible with your robot
@@ -74,6 +77,7 @@ class RobotMoves:
         
         for move in moves:
             if move == '': continue
+            move = move.replace("'", 'i')
             move = move.replace('3', 'i')
             move = move.replace('1', '')
             if move in self.converter:

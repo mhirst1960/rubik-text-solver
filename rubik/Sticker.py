@@ -18,7 +18,8 @@ class Sticker:
         self.destination = destination
         
     # yellow on left, white on front, green on right, blue on back, orange on up, red on down side
-    destinations= {'Y':'L', 'W':'F', 'G':'R', 'B':'B', 'O':'U', 'R':'D', None:'?'}
+    #hmm I wonder why this was here before? destinations= {'Y':'L', 'W':'F', 'G':'R', 'B':'B', 'O':'U', 'R':'D', None:'?'}
+    destinations= {'Y':'B', 'W':'F', 'G':'L', 'B':'R', 'O':'U', 'R':'D', None:'?'}
 
     def setPrintStyle(self, printStyle):
         assert isinstance(printStyle, CubePrintStyles)

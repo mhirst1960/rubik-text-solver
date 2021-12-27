@@ -1,6 +1,8 @@
+
+    <div>
         <form cubeaction="/cube" method="post">
 
-            <div><BR><BR>If the Cube does not look right you can reload the cube or click to edit.<br></div>
+            <div>If the Cube does not look right you can reload the cube or click to edit.<br></div>
             <div class="grid">
 
         % faceLookup = {"up":upcolors, "left":leftcolors, "front":frontcolors, "right":rightcolors, "back":backcolors, "down":downcolors}
@@ -25,7 +27,9 @@
                             <div class="dropdown-content">
                                 <div class="cell">
                                 % for i, color in enumerate(rubikspectrum):
+                                <div style="float:right;">
                                 <button class="dropbtn" style="background:{{color}};" name="cube-{{name}}"" value="{{face}}{{stickerIndex}}={{i}}" type="submit"></button>
+                                </div>
                                 % end
                                 </div>
                             </div>
@@ -50,3 +54,4 @@
         % end
 </div>
         </form> 
+    </div>
