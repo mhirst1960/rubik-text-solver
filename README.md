@@ -12,6 +12,8 @@ I implemented two examples:
 
 Everything is written using Python 3.
 
+There are pictures on my website: https://madwrapper.com/?te_announcements=rubik-robot
+
 # Run the Robot
 
 ## start the web server
@@ -177,8 +179,15 @@ conversions to make it easier to call external programs like a mor efficient sol
 or html webpage, validate colors from camera input.
 
 ### robot
-I am using a robot with only two grippers so moves are restricted to "down" and "back" (and related moves).
-So I have some conversions to generate only those legal moves.
+
+The robot is based on a design by KAS https://forum.arduino.cc/t/rubiks-cube-robot-solver/262557 .  It uses only two grippers the hold the cube in place as it moves the pieces around.  The design was ideal for my application.  I felt it was important to put the focus on the cube, not so much on the solver.  This robot presents the cube to onlookers.  Whereas many of the other robot designs available seem to engulf the cube thus a little less accessible to the audience.  I also decided to 3d-print the robot all in black for the same reason: to put the focus on the cube not the robot.  The down side of this robot is that, with only two grippers, it is very slow.  It is limited to moves only on the "down" and "back" sides of the cube.  So these are the legal moves: Y, Yi, Y2, Z, Zi, Z2, D, Di, D2, B, Bi, B2.  (This site has nice explanations of cube notation: https://ruwix.com/the-rubiks-cube/notation/).  It takes about 4-5 minutes to solve the cube.
+
+The computer inside the base of the robot is a Raspberry Pi 4b computer.  There is also a pca9685 PWM circuit board to control the servo motors that grab and rotate the cube.
+
+The 3d print files are downloaded from here:
+
+https://www.thingiverse.com/thing:3826740
+(Which is a remix from the original: https://www.thingiverse.com/thing:2800244)
 
 ### camera
 This implements functionality to use the robot to rotate the cube to present all six sides to the raspberry pi
