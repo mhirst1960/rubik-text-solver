@@ -178,14 +178,14 @@ to indicate where each sticker should migrate to once solved.
 You can pass this newly generated cube to any of the various cube solvers that are available (including the built-in solver).
 For efficiency I used the kociemba implementation to generate the actual moves used by my robot. 
 
-### state conversion
-For import/export, there is a class that handles some cube state conversions.  You can call some of these
-conversions to make it easier to call external programs like a mor efficient solver, display a javascript
-or html webpage, validate colors from camera input.
+### CubeOrder State Conversion
+
+There does not seem to be any standard established in the cubing community to describe the state of a cube.  I used several different applications
+for solving and displaying the cube. The class CubeOrder is very handy utility class for translating among applications.
 
 ### robot
 
-The robot is based on a design by KAS https://forum.arduino.cc/t/rubiks-cube-robot-solver/262557 .  It uses only two grippers the hold the cube in place as it moves the pieces around.  The design was ideal for my application.  I felt it was important to put the focus on the cube, not so much on the solver.  This robot presents the cube to onlookers.  Whereas many of the other robot designs available seem to engulf the cube thus a little less accessible to the audience.  I also decided to 3d-print the robot all in black for the same reason: to put the focus on the cube not the robot.  The down side of this robot is that, with only two grippers, it is very slow.  It is limited to moves only on the "down" and "back" sides of the cube.  So these are the legal moves: Y, Yi, Y2, Z, Zi, Z2, D, Di, D2, B, Bi, B2.  (This site has nice explanations of cube notation: https://ruwix.com/the-rubiks-cube/notation/).  It takes about 4-5 minutes to solve the cube.
+The robot I built is based on a design by KAS https://forum.arduino.cc/t/rubiks-cube-robot-solver/262557 .  It uses only two grippers the hold the cube in place as it moves the pieces around.  The design was ideal for my application.  I felt it was important to put the focus on the cube, not so much on the solver.  This robot presents the cube to onlookers.  Whereas many of the other robot designs available seem to engulf the cube thus making it less accessible or 'friendly' to the audience.  I also decided to 3d-print the robot all in black for the same reason: to put the focus on the cube not the robot.  The down side of this robot is that, with only two grippers, it is very slow.  It is limited to moves only on the "down" and "back" sides of the cube.  So these are the legal moves: Y, Yi, Y2, Z, Zi, Z2, D, Di, D2, B, Bi, B2.  (This site has nice explanations of cube notation: https://ruwix.com/the-rubiks-cube/notation/).  It takes about 4-5 minutes to solve the cube.
 
 The computer inside the base of the robot is a Raspberry Pi 4b computer.  There is also a pca9685 PWM circuit board to control the servo motors that grab and rotate the cube.
 
