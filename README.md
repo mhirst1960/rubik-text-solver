@@ -89,33 +89,32 @@ sudo pip3 install bottle
 The cornerstone of this implementation is the Piece class. A Piece stores two
 pieces of information:
 
-1. An integer `position` vector `(x, y, z)` where each component is in {-1, 0,
-1}:
+1. An integer `position` vector `(x, y, z)` where each component is one of the following values: -1, 0,
+1
     - `(0, 0, 0)` is the center of the cube
     - the positive x-axis points to the right face
     - the positive y-axis points to the up face
     - the positive z-axis points to the front face
 
 2. A `stickers` vector `(sx, sy, sz)`, giving the a tuple of (color,label,group,destination) of the sticker along each
-axis. Null values are place whenever that Piece has less than three sides. For
+axis. Null values are placeholders whenever that Piece has less than three sides. For
 example, a Piece with `colors=('Orange', None, 'Red')` is an edge piece with an
 `'Orange'` sticker facing the x-direction and a `'Red'` sticker facing the
-z-direction. The Piece doesn't know or care which direction along the x-axis
-the `'Orange'` sticker is facing, just that it is facing in the x-direction and
-not the y- or z- directions.
+z-direction. There is no sticker in the 'Y' direction.
 
 This same piece may optionally have three labels. ('T', None, '-').  So the 'Orange'
 would also be decorated with a 'T'.  I define the character '-' with special meaning
 that there is no label decoration on this sticker.  In this example, the 'Red' sticker
 would not have a label on it.
 
-To simplify the problem, each Piece will have a group.  And all stickers on the Piece
-will be defined as beingin the same group.  Typically multiple pieces will be in a single group.
-When solved, the letter is placed on the front side but is restricted to the position defined by its
-group.  When solved, all other sitckers within the same group will be '-' or blank.
+To simplify the problem, each Piece has a group.  All stickers on the Piece
+must be declared in the same group.  Typically multiple pieces will be in a single group but this is not a requirement.
+When solved, the letter is placed on the front side and is restricted to the position defined by its
+group.  When solved, only one labelled sticker in a group will show up in the group. All other stickers within the same
+group must be blank (defined as '-').
 
-The `destination` is a rather more generic way of describing the direction of
-a sitcker in solved position.  A destination can be any one of these letters: `ULFRDB` for
+Compared to 'color', a more generic description of sticker direction is its future `destination` of where it will sit once solved.
+A destination can be any one of these letters: `ULFRDB` as in
 `up, left, front, right, and down`.  For a normal cube every destination corresponds directly to a color:
 `OGWBYR` because solving results in all `orange` on the `up` face, all `green` on the `left` face, etc.
 By removing this restriction of for instance `up = orange` the cube can be considered solved when the
@@ -134,6 +133,11 @@ entries in the `colors` vector:
 - For an edge or face piece, the argument is the same as above, although we may
   swap around one or more null entries.
 
+### Sticker
+
+The sticker class encapsulates a piece's tuple: color,label,group,destination.
+Where there are between one and three stickers for every piece in the cube.
+
 ### Cube
 
 The Cube class is built on top of the Piece class. The Cube stores a list of
@@ -142,7 +146,7 @@ methods for querying the current state. (I followed standard [Rubik's Cube
 notation](http://ruwix.com/the-rubiks-cube/notation/))
 
 Because the Piece class encapsulates all of the rotation logic, implementing
-rotations in the Cube class is dead simple - just apply the appropriate
+rotations in the Cube class is simple - just apply the appropriate
 rotation matrix to all Pieces involved in the rotation. An example: To
 implement `Cube.L()` - a clockwise rotation of the left face - do the
 following:
@@ -167,11 +171,12 @@ then the middle layer (`z = 0`), and finally the back layer (`z = -1`). When
 the solver is done, `Solver.moves` is a list representing the solution
 sequence.
 
-You can pass a short string to the solver.  And it will solve the front layer only.
-No need tocontinue solving the entire cube.  After the front is solved, destinations are
-assigned to the resulting cube in case you want to export the cube state to be handled
-byt a more capable solver that will calculate the minimum number of moves to get to
-the final solved state.
+In this implementation, you can pass a short string to the solver to generate a new cube configuration.  It will solve the front
+layer and return the origional `unsolved` cube.  Colors are unchanged but `destinations` are reassigned
+to indicate where each sticker should migrate to once solved.
+
+You can pass this newly generated cube to any of the various cube solvers that are available (including the built-in solver).
+For efficiency I used the kociemba implementation to generate the actual moves used by my robot. 
 
 ### state conversion
 For import/export, there is a class that handles some cube state conversions.  You can call some of these
