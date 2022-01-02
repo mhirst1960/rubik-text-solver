@@ -10,6 +10,8 @@ I implemented two examples:
 
 Everything is written using Python 3.
 
+<img src="rubik-robot.png" width="512"/>
+
 There are pictures on my website: https://madwrapper.com/?te_announcements=rubik-robot
 
 TODO: Some of the functionality needs to be customized to adapt to your robot configuration and your Raspberry Pi configuration.  I did not do
