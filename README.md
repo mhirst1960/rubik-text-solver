@@ -14,6 +14,11 @@ Everything is written using Python 3.
 
 There are pictures on my website: https://madwrapper.com/?te_announcements=rubik-robot
 
+TODO: Some of the functionality needs to be customized to adapt to your robot configuration and your Raspberry Pi configuration.  I did not do
+an especially good job at seperating the configuration from the code.  The instructions below describe the files that need to be modified.
+When I get a chance I will update the project to make the customization more flexible.  Meanwhile, I appologize for the sub-standard installation
+requirements.
+
 # Run the Robot
 
 ## start the web server
@@ -66,8 +71,9 @@ It contains:
 This is a nice optimize solver I make calls to:
 https://github.com/hkociemba/RubiksCube-TwophaseSolver
 
+```
 pip3 install kociemba
-
+```
 
 A nice javascript cube view I found useful:
 https://cubing.github.io/AnimCubeJS/animcubejs.html#introduction
@@ -81,7 +87,75 @@ sudo pip3 install bottle
 
 ## Installation
 
+### Entry Points and Links
+If you decide to put the project somewhere else, adjust accordingly.
 
+```
+mkdir ~/rubik
+cd ~/rubik
+
+git clone git@github.com:mhirst1960/rubik-note.git
+
+edit  ~/.bashrc and add the following line somewhere:
+
+   PATH=~/bin:$PATH
+
+mkdir ~/bin
+cd ~/bin
+
+ln -s ~/rubik/rubik-text-solver/robot/closegrippers.py
+ln -s ~/rubik/rubik-text-solver/robot/cradle.py
+ln -s ~/rubik/rubik-text-solver/webpage/cubesolverhttp.py
+ln -s ~/rubik/rubik-text-solver/robot/getcubestate.py
+ln -s ~/rubik/rubik-text-solver/robot/moverrobot.py
+ln -s ~/rubik/rubik-text-solver/robot/opengrippers.py
+ln -s ~/rubik-text-solver/tmwrubik.py
+```
+
+Install the optimized cube solver:
+```
+pip3 install kociemba
+```
+
+### Servos
+Every servo is unique.  It requires trial and error to configure the robot gripper parameters for
+exactly 0, 90, and 180 degree rotation.  It would be good to read through this long blog to understand
+the servos: https://forum.arduino.cc/t/rubiks-cube-robot-solver/262557
+
+As described in the blog I created a test jig out of wood to tune my 3D-printed grippers before mounting
+on the actual robot stand.
+
+Parameters are in this file:
+rubik-text-solver/robot/CubeMover.py
+
+You will need to customize these lines of code:
+
+```
+        self.kit.servo[self.rightWrist].set_pulse_width_range(400, 2600)
+        self.kit.servo[self.leftWrist].set_pulse_width_range(400, 2600)
+        self.left = Gripper(self.kit, self.leftPinch,  self.leftWrist,
+                                81, 93, 150, #close, cradle, open
+                                18, 98, 171)  #back, up, front
+        self.right= Gripper(self.kit, self.rightPinch, self.rightWrist,
+                                78, 90, 150, #close, cradle, open
+                                170, 93, 15)  #back, up, front
+```
+### Your Customized Cube
+
+You will need to edit rubik/tmwrubik.py to match the stickers you put on your cube.  These are the values
+- TMW_CUBE_LABELS
+- TMW_CUBE_GROUPS
+- TMW_PEOPLE
+
+#### Rubik's clock
+Note: if you want to make a clock you can use the parameters found in this file as a starting point:
+     rubik-text-solver/rubik-clock.py
+     
+The clock works fine in the simulation but is not very practical with the robot I'm using since it can typically
+take 2 to 6 minutes to solve. Under 10 seconds would be ideal and this robot is a long way from that.
+(TODO: investigate faster robots for a cool clock impementation.  Investigate adapting hkociemba/RubiksCube-TwophaseSolver
+to optimize for solving only the front of the cube, not the whole cube.  We don't care about sticker values on any layer except the front.)
+     
 ## Implementation
 
 ### Piece
@@ -196,8 +270,8 @@ https://www.thingiverse.com/thing:3826740
 
 ### camera
 This implements functionality to use the robot to rotate the cube to present all six sides to the raspberry pi
-camera.  After all sticker colors are sampled, the values are provided to a pretty robust piece of software to assign
-a stick color to every sticker.
+camera.  After all sticker colors are sampled, the values are passed to a pretty robust piece of software to assign
+a color to every sticker.
 
 
 ### webpage
@@ -218,3 +292,187 @@ Note: if you have this connected to a live robot, this webpage might be a little
 setting up a firewall.  I used port 18080.  (You can use any port you want, the standard is typically port 8080 or port 80).  So consider running this command on you raspberry pi when you are running the webpage to block other computers from accessing the webpage, adjusting the port that you are using:
 
 iptables -A INPUT -p tcp --dport 18080 -j DROP
+
+## Files
+### ~/bin directory
+To give you an idea of the important entry points to the software these are the symbolic links I have in my bin directory:
+
+```
+tmwrubik.py -> /home/pi/rubik/rubik-text-solver/tmwrubik.py
+
+closegrippers.py -> /home/pi/rubik/rubik-text-solver/robot/closegrippers.py
+cradle.py -> /home/pi/rubik/rubik-text-solver/robot/cradle.py
+moverrobot.py -> /home/pi/rubik/rubik-text-solver/robot/moverrobot.py
+opengrippers.py -> /home/pi/rubik/rubik-text-solver/robot/opengrippers.py
+
+cubesolverhttp.py -> /home/pi/rubik/rubik-text-solver/webpage/cubesolverhttp.py
+getcubestate.py -> /home/pi/rubik/rubik-text-solver/robot/getcubestate.py
+```
+
+See the installation section for commands to create these important links.
+
+#### rubik-text-solver/tmwrubik.py
+A primary entrypoint to the system.  This is called from the webpage discussed below.  It accepts a wide varienty of parameters including "--help":
+
+```
+python3 ./tmwrubik.py --help
+usage: tmwrubik.py [-h] [--verbose] [--person PERSON] [--inputorder {xray,unfold,kociemba,camera}] [--infile INFILE] [--input INPUT]
+                   [--updatestate] [--no-updatestate] [--output {xray,unfold,kociemba,robot,moves}]
+                   [--outputdatatype {destinations,colors,frontstring,moves,None}] [--movenotation {singmaster,programmer}] [--robot]
+                   [--no-robot] [--camera] [--no-camera] [--simulation]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --verbose, -v         show debug messages -v, -vv, -vvv for more and more debug
+  --person PERSON       initials for person to solve for
+  --inputorder {xray,unfold,kociemba,camera}
+                        Color input from camera or color string order: back=front, onfolded paper cube, or orbital kociemba
+  --infile INFILE       File contains one line list of colors: OGYWBR and order depends on --inputorder: back=front, onfolded paper cube,
+                        or orbital kociemba
+  --input INPUT         values for input are: "camera", "file", or list of colors: OGYWBR and order depends on --inputorder: back=front,
+                        onfolded paper cube, or orbital kociemba
+  --updatestate         for persistance, update input file with current state when finished (default: --updatestate)
+  --no-updatestate      Do not persist the state. Do not update input file. (default: --updatestate)
+  --output {xray,unfold,kociemba,robot,moves}
+                        robot solve, or print planned moves, or print destination order: back=front, onfolded paper cube, or orbital
+                        kociemba
+  --outputdatatype {destinations,colors,frontstring,moves,None}
+                        how should we print output (No output = None)
+  --movenotation {singmaster,programmer}
+                        primmaster uses prime like X', programmer uses i like Xi
+  --robot               Allow robot to move (default: --no-robot)
+  --no-robot            Do not allow robot to move (default: --no-robot)
+  --camera              Use the camera (default: --no-camera)
+  --no-camera           Do not use the camera (default: --no-camera)
+  --simulation          do not use the camera or robot. Generate webpage and update state file when done.
+```
+
+In this file you will find several parameters that need to be customized for a cube with different labels:
+
+- TMW_CUBE_LABELS
+- TMW_CUBE_GROUPS
+- TMW_PEOPLE
+
+(TODO: I need to rename tmwrubik.py to something generic and move the data to a config file or pass as parameter.  TMW are the initials for The Mad Wrapper.)
+
+### rubik-text-solver/rfid directory
+This directory can be ignored.  My first implementation included an RFID reader to scan RFID tags attached to gifts.  The code works
+fine on it's own but it is unreliable -- probably a hardware issue.  With all the electronics in the base of my robot I suspect there
+is interference between the robot servos and the SPI interface to the RC522.  Also, I needed to implement a webpage interface anyway
+so, in the end, I went with the webpage instead of RFID.
+
+### rubik-text-solver/robot directory
+Python files in this directory control the robot and the camera.
+
+
+#### rubik-text-solver/robot/opengrippers.py
+A utility application to open the grippers.  Simply call from the command line and both grippers will open and drop the cube.
+Call this if your cube gets jammed.
+
+#### rubik-text-solver/robot/closegrippers.py
+A utility application to close the grippers.  Simply call from the command line and the grippers will close.
+
+#### rubik-text-solver/robot/cradle.py
+A utility application to cradle the grippers.  Simply call from the command line and the grippers will partially close
+to allow the user to insert or remove the cube from the grippers.
+
+#### rubik-text-solver/robot/CubeMover.py
+Class for moving the cube pieces.  See instalation notes for changes you need to make to this file for the servos you
+are using.
+
+#### rubik-text-solver/robot/Gripper.py
+Small class used by CubeMover to encapsulate paramewters for one of the grippers.  Along with a few utility functions
+used my CubeMover.
+
+#### rubik-text-solver/robot/Lighting.py
+Small class to control LED GPIO lighting.
+
+#### rubik-text-solver/robot/getcubestate.py
+application to take pictures of all sides of the cube to discover the current state of all stickers on  the cube.
+
+You may need to customize these parameters for position depending on where your camera gets mounted in relation to the cube.
+You can also experiment with camera resolution by adjusting these parameters.
+
+```
+    resolution = (640, 480)
+    stickerSize=65
+    stickerSize2= int(stickerSize * 0.5)
+    stickerSpace=90
+
+    #Sticker centers
+    stickerX1 = 190
+    stickerY1 = 95   
+
+    #areas for white balance (white sticker placed on the gripper)
+    wbX1 = 120
+    wbY1 = 360
+    wbX2 = 530
+    wbY2 = 350
+    wbWidth1 = 15
+    wbHeight1 = 15
+```
+
+The oupput and an HTML page are generated based on these parmaeters:
+
+```
+HOME = "/home/pi/"
+OUTFILE = HOME + "cubestate.txt"
+HTMLDIR = HOME + "/cubeshower/"
+```
+
+A ton of raw images are saved here for debugging:
+
+```
+/home/pi/cubeimages/
+```
+
+Also the color resolver application generates HTML here that you can view from your browser:
+```
+/tmp/rubiks-color-resolver.html
+```
+
+(TODO: HOME should be a variable.  There is a python command to get that.  Also, maybe parse args so users can specify the directory for all the files.)
+
+#### rubik-text-solver/robot/moverrobot.py
+
+move the robot with a sequence of moves
+
+```
+moverrobot.py --help
+usage: moverrobot.py [-h] [--verbose] [--moves MOVES] [--cradleafter]
+                     [--simulation]
+
+optional arguments:
+  -h, --help     show this help message and exit
+  --verbose, -v  show debug messages -v, -vv, -vvv for more and more debug
+  --moves MOVES  list of moves for the robot to execute
+  --cradleafter  After all moves are complete cradle the cube so users are
+                 able to easily remove the cube.
+  --simulation   do not use the camera or robot. Generate webpage and update
+                 state file when done.
+```
+
+Here is a simple example thst moves the back 90 degrees then 90 degrees in the opposit direction to the origional state:
+
+```
+moverrobot.py --moves "B Bi"
+```
+
+#### rubik-text-solver/robot/servo.py
+Test code.  Feel free to hack this file if you make modifications and need to do some debugging.
+(TODO: I should rename to servotest.py or something)
+
+### rubik-text-solver/rubik directory
+Python files in this directory are used for generating custom cubes that are solved by putting a message on the front of the cube.
+This also contains an algorithm to actually solve the cube and generate a sequence of moves to feed to the robot.  This algorithm
+is simple and works fine but is not optimized.  I ended up using a different "third party" application to generate the actual robot moves.
+The Kociemba approach generates a robot move sequence about half as long as the method implemented in the rubik directory.
+
+### rubik-text-solver/tests directory
+Various tests to test cube solver code in the 'rubik' directory. Mostly this is the origional untouched code implemented by pglass for
+solving normal non-labeled cubes.  TODO: I should probably add more tests here to test the text solver functionality.
+
+### rubik-text-solver/webpage directory
+The code here implements a simple web page server using bottle framework.
+
+
