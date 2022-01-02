@@ -37,16 +37,15 @@ Use this URL in your browser running on the Raspberry Pi that runs the robot.
 http://localhost:18080/cube
 
 
-![image](https://user-images.githubusercontent.com/6749076/147514398-1ee665a4-c671-44bc-a9c6-5711c7e9bb34.png)
+<img src="webpage-dag.png" width="512"/>
 
 Assuming the cube is correctly represented in the picture, type in the user's code name and press "Solve the cube!".  Ultimately this runs the command:
 
 tmwrubik.py --person person --inputorder kociemba --output robot --robot --input file --infile /home/pi/cubestate.txt
 
-Where "person" is a person's initials (E.g. "KLH") and cubestate.txt is a 54-character string representing the current colors of the cube.  E.g.
+Where "person" is a person's initials (E.g. "DAG") and cubestate.txt contains a 54-character string representing the current colors of the cube.
 
-BWWYOGBWGORGGGOGGOOOWBYWBRYRBROROORYYGYRBYWYWRBRBWWGYB
-
+YGWOBGGWOBWGBWRYBOOOWGOWRRBWBRYGYYOYGGWOYYORBRRRWRYGBB
 
 # More Details
 
