@@ -1,5 +1,3 @@
-![PyPI](https://img.shields.io/pypi/v/rubik-cube)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/rubik-cube)
 
 # Overview
 
@@ -41,7 +39,7 @@ http://localhost:18080/cube
 
 Assuming the cube is correctly represented in the picture, type in the user's code name and press "Solve the cube!".  Ultimately this runs the command:
 
-tmwrubik.py --person person --inputorder kociemba --output robot" --robot" --input file --infile /home/pi/cubestate.txt
+tmwrubik.py --person person --inputorder kociemba --output robot --robot --input file --infile /home/pi/cubestate.txt
 
 Where "person" is a person's initials (E.g. "KLH") and cubestate.txt is a 54-character string representing the current colors of the cube.  E.g.
 
@@ -66,14 +64,10 @@ It contains:
 - raspberry pi camera functionality
 - webpage for manipulating the cube
 
-## Other cool things I use in this project
+## Some cool applications I use in this project
 
 This is a nice optimize solver I make calls to:
 https://github.com/hkociemba/RubiksCube-TwophaseSolver
-
-```
-pip3 install kociemba
-```
 
 A nice javascript cube view I found useful:
 https://cubing.github.io/AnimCubeJS/animcubejs.html#introduction
@@ -83,11 +77,11 @@ https://github.com/dwalton76/rubiks-color-resolver
 
 A nice web server I use for the webpage:
 https://bottlepy.org/docs/dev/index.html
-sudo pip3 install bottle
+
 
 ## Installation
 
-### Entry Points and Links
+#### Install this project
 If you decide to put the project somewhere else, adjust accordingly.
 
 ```
@@ -95,11 +89,18 @@ mkdir ~/rubik
 cd ~/rubik
 
 git clone git@github.com:mhirst1960/rubik-note.git
+```
 
+#### Add application commands to path
 edit  ~/.bashrc and add the following line somewhere:
 
-   PATH=~/bin:$PATH
+```
+PATH=~/bin:$PATH
+```
 
+Create local bin directory if it does not already exist.  And link the executibles.
+
+```
 mkdir ~/bin
 cd ~/bin
 
@@ -112,9 +113,20 @@ ln -s ~/rubik/rubik-text-solver/robot/opengrippers.py
 ln -s ~/rubik-text-solver/tmwrubik.py
 ```
 
-Install the optimized cube solver:
+#### Install the optimized cube solver
 ```
 pip3 install kociemba
+```
+#### Install the color resolver:
+
+```
+sudo python3 -m pip install git+https://github.com/dwalton76/rubiks-color-resolver.git
+```
+
+#### Install bottle framework
+
+```
+sudo pip3 install bottle
 ```
 
 ### Servos
@@ -142,10 +154,13 @@ You will need to customize these lines of code:
 ```
 ### Your Customized Cube
 
-You will need to edit rubik/tmwrubik.py to match the stickers you put on your cube.  These are the values
-- TMW_CUBE_LABELS
-- TMW_CUBE_GROUPS
-- TMW_PEOPLE
+You will need to edit rubik/tmwrubik.py to match the stickers you put on your cube.  These are the variables
+
+```
+TMW_CUBE_LABELS
+TMW_CUBE_GROUPS
+TMW_PEOPLE
+```
 
 #### Rubik's clock
 Note: if you want to make a clock you can use the parameters found in this file as a starting point:
@@ -288,10 +303,16 @@ There is a simple webpage to display the cube, edit the cube, and initiate vario
 
 The webpage is based on bottle webserver https://bottlepy.org/
 
-Note: if you have this connected to a live robot, this webpage might be a little dangerous to access from a remote host as there are buttons to directly control the robot grippers.  If you plan to only run the webpage on a browser on your local raspberry pi. Consider
-setting up a firewall.  I used port 18080.  (You can use any port you want, the standard is typically port 8080 or port 80).  So consider running this command on you raspberry pi when you are running the webpage to block other computers from accessing the webpage, adjusting the port that you are using:
+#### Security
 
-iptables -A INPUT -p tcp --dport 18080 -j DROP
+Note: if you have this connected to a Live robot, this webpage might be a little dangerous to access from a remote host as there are buttons to directly control the robot grippers.  If you plan to only run the webpage on a browser on your local raspberry pi. Consider
+setting up a firewall.  I used port 18080.  (You can use any port you want, the standard is typically port 8080 or port 80).  So consider running this command on you raspberry pi when you are running the webpage to block other computers from accessing the webpage, adjusting the port that you are using.
+
+If you want to block other computers from using this webpage use this command:
+
+```
+sudo iptables -A INPUT -p tcp --dport 18080 -j DROP
+```
 
 ## Files
 ### ~/bin directory
@@ -349,9 +370,11 @@ optional arguments:
 
 In this file you will find several parameters that need to be customized for a cube with different labels:
 
-- TMW_CUBE_LABELS
-- TMW_CUBE_GROUPS
-- TMW_PEOPLE
+```
+TMW_CUBE_LABELS
+TMW_CUBE_GROUPS
+TMW_PEOPLE
+```
 
 (TODO: I need to rename tmwrubik.py to something generic and move the data to a config file or pass as parameter.  TMW are the initials for The Mad Wrapper.)
 
@@ -475,4 +498,38 @@ solving normal non-labeled cubes.  TODO: I should probably add more tests here t
 ### rubik-text-solver/webpage directory
 The code here implements a simple web page server using bottle framework.
 
+#### rubik-text-solver/webpage/cubesolverhttp.py
+Application that runs the http server on port 18080.
+
+After running this command, you can enter this URL into your browser (Chromium or Firefox maybe)
+
+```
+http://localhost:18080/cube
+```
+
+```
+cubesolverhttp.py --help
+usage: cubesolverhttp.py [-h] [--simulation]
+
+optional arguments:
+  -h, --help    show this help message and exit
+  --simulation  do not use the camera or robot. Generate webpage and update state file when done.
+```
+
+If you would like to run on a different port you can modify this line at the end of the file (8080 is a more standard port number):
+
+```
+run(host='localhost', port=18080,
+```
+
+(TODO: I should add a parameter "--port" that allows users to define a custom port number)
+
+#### rubik-text-solver/webpage/CubeWebpage.py
+A class used by cubesolverhttp.py to generate the webpage
+
+#### rubik-text-solver//webpage/static/ directory
+This directory contains the CSS, a browser tab icon, and some .jpg images
+
+#### rubik-text-solver//webpage/views/flatcube.tpl
+A template describing the layout of the 54 stickers on the cube
 
