@@ -277,6 +277,9 @@ for solving and displaying the cube. The class CubeOrder is very handy utility c
 
 The robot I built is based on a design by KAS https://forum.arduino.cc/t/rubiks-cube-robot-solver/262557 .  It uses only two grippers the hold the cube in place as it moves the pieces around.  The design was ideal for my application.  I felt it was important to put the focus on the cube, not so much on the solver.  This robot presents the cube to onlookers.  Whereas many of the other robot designs available seem to engulf the cube thus making it less accessible or 'friendly' to the audience.  I also decided to 3d-print the robot all in black for the same reason: to put the focus on the cube not the robot.  The down side of this robot is that, with only two grippers, it is very slow.  It is limited to moves only on the "down" and "back" sides of the cube.  So these are the legal moves: Y, Yi, Y2, Z, Zi, Z2, D, Di, D2, B, Bi, B2.  (This site has nice explanations of cube notation: https://ruwix.com/the-rubiks-cube/notation/).  It takes about 4-5 minutes to solve the cube.
 
+One adjustment I made was the material between the printed gripper and the cube.  I glued "stretch & Seal" silicon tape to the gripper fingers using superglue.  With no
+tape the cube kept slipping.  I also tried small rubber bands which proved to be too thick and the jaws were unable to close properly for an accrate grab.  The silicon tape is very thin and has great grip. I'm not sure super glue is the best type of glue for the job but it held long enough for the Christmas celebration.  But now I need to reglue the "pads" as they are beginning to peel.
+
 The computer inside the base of the robot is a Raspberry Pi 4b computer.  There is also a pca9685 PWM circuit board to control the servo motors that grab and rotate the cube.
 
 The 3d print files are downloaded from here:
