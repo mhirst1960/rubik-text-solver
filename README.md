@@ -534,3 +534,6 @@ This directory contains the CSS, a browser tab icon, and some .jpg images
 #### rubik-text-solver//webpage/views/flatcube.tpl
 A template describing the layout of the 54 stickers on the cube
 
+## Circuit diagram
+
+<img src="SolverCircuit.png" width="1024"/>
