@@ -537,6 +537,15 @@ This directory contains the CSS, a browser tab icon, and some .jpg images
 #### rubik-text-solver//webpage/views/flatcube.tpl
 A template describing the layout of the 54 stickers on the cube
 
-## Circuit diagram
+## Hardware
+
+### 3D printed robot
+
+The robot is 3D printed on a Creality Ender 3 from source you can find on Thingiverse:
+
+- https://www.thingiverse.com/thing:3826740
+- https://www.thingiverse.com/thing:5183895
+
+### Circuit diagram
 
 <img src="SolverCircuit.png" width="1024"/>
